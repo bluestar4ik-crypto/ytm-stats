@@ -33,5 +33,5 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "YTM Cloud Radar"
-          git add stats_fm.db data.js bot_state.json || true
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-sync YTM stats" && git push)
+          git add -A
+          git diff --staged --quiet || (git commit -m "Auto-sync YTM stats" && git push)
