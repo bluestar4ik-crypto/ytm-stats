@@ -1,0 +1,37 @@
+name: YTM Cloud Radar 24/7
+
+on:
+  schedule:
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync_music:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install ytmusicapi Pillow
+
+      - name: Run Radar & Build Dashboard Data
+        env:
+          YTM_AUTH_JSON: ${{ secrets.YTM_AUTH_JSON }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+        run: python cloud_sync.py
+
+      - name: Commit and Push updated stats
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "YTM Cloud Radar"
+          git add stats_fm.db data.js bot_state.json || true
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-sync YTM stats" && git push)
