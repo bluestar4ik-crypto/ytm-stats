@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>YTM.stats CLOUD — Мой личный stats.fm</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -10,149 +10,204 @@
 <script src="data.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-  body { background-color: #090c10; color: #f3f4f6; font-family: 'Inter', sans-serif; }
+  body { background-color: #090c10; color: #f3f4f6; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
   .card { background-color: #12161f; border: 1px solid #1e2533; border-radius: 18px; }
   .accent { color: #1ed760; }
   .bg-accent { background-color: #1ed760; color: #000; }
   .tab-btn.active { background-color: #1ed760; color: #090c10; font-weight: 700; }
   .nav-pill.active { border-bottom: 2px solid #1ed760; color: #1ed760; font-weight: 700; }
-  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  .mob-nav.active { color: #1ed760; font-weight: 700; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: #090c10; }
   ::-webkit-scrollbar-thumb { background: #263042; border-radius: 4px; }
 </style>
 </head>
-<body class="min-h-screen pb-16">
+<body class="min-h-screen pb-24 md:pb-16">
 
-<header class="sticky top-0 z-30 bg-[#090c10]/95 backdrop-blur-md border-b border-[#1e2533] px-4 md:px-6 py-3.5">
-  <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-accent flex items-center justify-center font-extrabold text-xl shadow-lg shadow-green-500/20">⚡</div>
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-xl font-extrabold tracking-tight">YTM<span class="accent">.stats</span> <span class="text-[10px] bg-emerald-500/20 text-[#1ed760] px-2 py-0.5 rounded-full uppercase font-bold">CLOUD 24/7</span></h1>
+<!-- Компактная адаптивная шапка -->
+<header class="sticky top-0 z-30 bg-[#090c10]/95 backdrop-blur-md border-b border-[#1e2533] px-3.5 md:px-6 py-2.5 md:py-3.5">
+  <div class="max-w-7xl mx-auto space-y-2.5">
+    
+    <!-- Верхний ряд: Лого + Live (на ПК) + Кнопка Рекапа справа -->
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-accent flex items-center justify-center font-extrabold text-lg md:text-xl shadow-lg shadow-green-500/20 flex-shrink-0">⚡</div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-lg md:text-xl font-extrabold tracking-tight">YTM<span class="accent">.stats</span></h1>
+            <span class="text-[9px] md:text-[10px] bg-emerald-500/20 text-[#1ed760] px-1.5 py-0.5 rounded-full uppercase font-bold">24/7</span>
+          </div>
+          <p class="text-[11px] text-gray-400 truncate" id="date-range-label">Загрузка...</p>
         </div>
-        <p class="text-xs text-gray-400" id="date-range-label">Загрузка...</p>
+
+        <!-- Плашка эфира для ПК -->
+        <div class="hidden lg:flex items-center gap-2.5 bg-[#12161f] border border-[#1e2533] px-3 py-1.5 rounded-xl ml-3">
+          <div class="w-2 h-2 rounded-full bg-[#1ed760] animate-ping flex-shrink-0"></div>
+          <div class="text-xs max-w-[240px]">
+            <p class="font-bold text-white truncate" id="live-title-desktop">Облачный радар активен</p>
+            <p class="text-[10px] text-gray-400 truncate" id="live-sub-desktop">Автообновление каждые 20 мин</p>
+          </div>
+        </div>
       </div>
 
-      <div class="hidden sm:flex items-center gap-2.5 bg-[#12161f] border border-[#1e2533] px-3 py-1.5 rounded-xl ml-2">
-        <div class="w-2.5 h-2.5 rounded-full bg-[#1ed760] animate-ping"></div>
-        <div class="text-xs max-w-[220px]">
-          <p class="font-bold text-white truncate" id="live-title">Облачный радар активен</p>
-          <p class="text-[10px] text-gray-400 truncate" id="live-sub">Автообновление каждые 20 мин</p>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <!-- Переключатель периодов для ПК -->
+        <div class="hidden md:flex items-center gap-1 bg-[#12161f] p-1 rounded-xl border border-[#1e2533]">
+          <button onclick="loadStats(7)" id="tab-d-7" class="tab-btn px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">7д</button>
+          <button onclick="loadStats(30)" id="tab-d-30" class="tab-btn px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">4 нед</button>
+          <button onclick="loadStats(90)" id="tab-d-90" class="tab-btn px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">3 мес</button>
+          <button onclick="loadStats(365)" id="tab-d-365" class="tab-btn px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">Год</button>
+          <button onclick="loadStats(0)" id="tab-d-0" class="tab-btn active px-3 py-1.5 rounded-lg text-xs transition">Всё время</button>
         </div>
+
+        <button onclick="openRecapModal()" class="bg-accent hover:opacity-90 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition shadow-lg shadow-green-500/20">
+          📸 Рекап
+        </button>
       </div>
     </div>
 
-    <div class="flex items-center gap-1 bg-[#12161f] p-1 rounded-xl border border-[#1e2533] overflow-x-auto">
-      <button onclick="loadStats(7)" id="tab-7" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">7д</button>
-      <button onclick="loadStats(30)" id="tab-30" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">4 нед</button>
-      <button onclick="loadStats(90)" id="tab-90" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">3 мес</button>
-      <button onclick="loadStats(365)" id="tab-365" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">Год</button>
-      <button onclick="loadStats(0)" id="tab-0" class="tab-btn active px-3 py-1.5 rounded-lg text-xs transition">Всё время</button>
+    <!-- Компактная строка живого эфира для мобилки -->
+    <div class="flex lg:hidden items-center justify-between bg-[#12161f] border border-[#1e2533] px-3 py-1.5 rounded-xl text-xs">
+      <div class="flex items-center gap-2 min-w-0 pr-2">
+        <div class="w-2 h-2 rounded-full bg-[#1ed760] animate-ping flex-shrink-0"></div>
+        <span class="font-bold text-white truncate" id="live-title-mobile">Облачный радар активен</span>
+      </div>
+      <span class="text-[10px] text-gray-400 flex-shrink-0" id="live-sub-mobile">24/7</span>
     </div>
 
-    <button onclick="openRecapModal()" class="bg-accent hover:opacity-90 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition shadow-lg shadow-green-500/20">
-      📸 Рекап
-    </button>
-  </div>
+    <!-- Ровная сетка периодов на всю ширину для мобилки -->
+    <div class="grid grid-cols-5 md:hidden gap-1 bg-[#12161f] p-1 rounded-xl border border-[#1e2533] text-center">
+      <button onclick="loadStats(7)" id="tab-m-7" class="tab-btn py-1.5 rounded-lg text-[11px] text-gray-300 transition">7д</button>
+      <button onclick="loadStats(30)" id="tab-m-30" class="tab-btn py-1.5 rounded-lg text-[11px] text-gray-300 transition">4 нед</button>
+      <button onclick="loadStats(90)" id="tab-m-90" class="tab-btn py-1.5 rounded-lg text-[11px] text-gray-300 transition">3 мес</button>
+      <button onclick="loadStats(365)" id="tab-m-365" class="tab-btn py-1.5 rounded-lg text-[11px] text-gray-300 transition">Год</button>
+      <button onclick="loadStats(0)" id="tab-m-0" class="tab-btn active py-1.5 rounded-lg text-[11px] transition">Всё</button>
+    </div>
 
-  <div class="max-w-7xl mx-auto flex gap-6 mt-3 pt-2 border-t border-white/5 text-xs text-gray-400 overflow-x-auto">
-    <button onclick="switchSection('overview')" id="nav-overview" class="nav-pill active pb-2 whitespace-nowrap">📊 Дашборд</button>
-    <button onclick="switchSection('eras')" id="nav-eras" class="nav-pill pb-2 hover:text-white whitespace-nowrap">👑 Музыкальные Эры</button>
-    <button onclick="switchSection('battle')" id="nav-battle" class="nav-pill pb-2 hover:text-white whitespace-nowrap">⚔️ Битва артистов</button>
-    <button onclick="switchSection('gems')" id="nav-gems" class="nav-pill pb-2 hover:text-white whitespace-nowrap">💎 Сокровища и Поиск</button>
+    <!-- Вкладки для ПК -->
+    <div class="hidden md:flex gap-6 pt-1 border-t border-white/5 text-xs text-gray-400 no-scrollbar">
+      <button onclick="switchSection('overview')" id="nav-d-overview" class="nav-pill active pb-2">📊 Дашборд</button>
+      <button onclick="switchSection('eras')" id="nav-d-eras" class="nav-pill pb-2 hover:text-white">👑 Музыкальные Эры</button>
+      <button onclick="switchSection('battle')" id="nav-d-battle" class="nav-pill pb-2 hover:text-white">⚔️ Битва артистов</button>
+      <button onclick="switchSection('gems')" id="nav-d-gems" class="nav-pill pb-2 hover:text-white">💎 Сокровища и Поиск</button>
+    </div>
   </div>
 </header>
 
-<main class="max-w-7xl mx-auto px-4 md:px-6 mt-6 space-y-8">
-  <div id="sec-overview" class="space-y-6">
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
-      <div class="card p-4"><p class="text-[11px] text-gray-400 uppercase font-semibold">Стримов</p><p class="text-2xl font-extrabold mt-1 accent" id="stat-streams">0</p><p class="text-[11px] text-gray-500 mt-1" id="stat-sources">YTM + Клипы</p></div>
-      <div class="card p-4"><p class="text-[11px] text-gray-400 uppercase font-semibold">Минут музыки</p><p class="text-2xl font-extrabold mt-1" id="stat-minutes">0</p><p class="text-[11px] text-gray-500 mt-1" id="stat-hours">~0 часов</p></div>
-      <div class="card p-4"><p class="text-[11px] text-gray-400 uppercase font-semibold">Треков</p><p class="text-2xl font-extrabold mt-1" id="stat-tracks">0</p><p class="text-[11px] text-gray-500 mt-1">уникальных песен</p></div>
-      <div class="card p-4"><p class="text-[11px] text-gray-400 uppercase font-semibold">Артистов</p><p class="text-2xl font-extrabold mt-1" id="stat-artists">0</p><p class="text-[11px] text-gray-500 mt-1">исполнителей</p></div>
-      <div class="card p-4"><p class="text-[11px] text-gray-400 uppercase font-semibold">Индекс репита</p><p class="text-2xl font-extrabold mt-1 text-emerald-400" id="stat-repeat">0x</p><p class="text-[11px] text-gray-500 mt-1">стримов на песню</p></div>
-      <div class="card p-4"><p class="text-[11px] text-gray-400 uppercase font-semibold">Рекордный стрик</p><p class="text-2xl font-extrabold mt-1 text-amber-400" id="stat-streak">0 дн.</p><p class="text-[11px] text-gray-500 mt-1" id="stat-active-days">активных дней</p></div>
+<!-- Нижнее меню для телефона (как в нативном приложении stats.fm) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#090c10]/95 backdrop-blur-lg border-t border-[#1e2533] grid grid-cols-4 py-2 px-2 text-center text-[11px] text-gray-400">
+  <button onclick="switchSection('overview')" id="nav-m-overview" class="mob-nav active flex flex-col items-center gap-0.5 py-1">
+    <span class="text-base">📊</span>
+    <span>Дашборд</span>
+  </button>
+  <button onclick="switchSection('eras')" id="nav-m-eras" class="mob-nav flex flex-col items-center gap-0.5 py-1">
+    <span class="text-base">👑</span>
+    <span>Эры</span>
+  </button>
+  <button onclick="switchSection('battle')" id="nav-m-battle" class="mob-nav flex flex-col items-center gap-0.5 py-1">
+    <span class="text-base">⚔️️</span>
+    <span>Битва</span>
+  </button>
+  <button onclick="switchSection('gems')" id="nav-m-gems" class="mob-nav flex flex-col items-center gap-0.5 py-1">
+    <span class="text-base">💎</span>
+    <span>Поиск</span>
+  </button>
+</nav>
+
+<main class="max-w-7xl mx-auto px-3.5 md:px-6 mt-4 md:mt-6 space-y-6">
+  <div id="sec-overview" class="space-y-5">
+    <!-- Сетка главных цифр -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="card p-3.5 md:p-4"><p class="text-[10px] md:text-[11px] text-gray-400 uppercase font-semibold">Стримов</p><p class="text-xl md:text-2xl font-extrabold mt-0.5 accent" id="stat-streams">0</p><p class="text-[10px] md:text-[11px] text-gray-500 mt-0.5" id="stat-sources">YTM + Клипы</p></div>
+      <div class="card p-3.5 md:p-4"><p class="text-[10px] md:text-[11px] text-gray-400 uppercase font-semibold">Минут музыки</p><p class="text-xl md:text-2xl font-extrabold mt-0.5" id="stat-minutes">0</p><p class="text-[10px] md:text-[11px] text-gray-500 mt-0.5" id="stat-hours">~0 часов</p></div>
+      <div class="card p-3.5 md:p-4"><p class="text-[10px] md:text-[11px] text-gray-400 uppercase font-semibold">Треков</p><p class="text-xl md:text-2xl font-extrabold mt-0.5" id="stat-tracks">0</p><p class="text-[10px] md:text-[11px] text-gray-500 mt-0.5">уникальных песен</p></div>
+      <div class="card p-3.5 md:p-4"><p class="text-[10px] md:text-[11px] text-gray-400 uppercase font-semibold">Артистов</p><p class="text-xl md:text-2xl font-extrabold mt-0.5" id="stat-artists">0</p><p class="text-[10px] md:text-[11px] text-gray-500 mt-0.5">исполнителей</p></div>
+      <div class="card p-3.5 md:p-4"><p class="text-[10px] md:text-[11px] text-gray-400 uppercase font-semibold">Индекс репита</p><p class="text-xl md:text-2xl font-extrabold mt-0.5 text-emerald-400" id="stat-repeat">0x</p><p class="text-[10px] md:text-[11px] text-gray-500 mt-0.5">стримов на песню</p></div>
+      <div class="card p-3.5 md:p-4"><p class="text-[10px] md:text-[11px] text-gray-400 uppercase font-semibold">Рекордный стрик</p><p class="text-xl md:text-2xl font-extrabold mt-0.5 text-amber-400" id="stat-streak">0 дн.</p><p class="text-[10px] md:text-[11px] text-gray-500 mt-0.5" id="stat-active-days">активных дней</p></div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="achievements-grid"></div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="achievements-grid"></div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="card p-5"><div class="flex items-center justify-between mb-4"><h2 class="text-base font-bold">👑 Топ артистов</h2><span class="text-xs text-gray-400">Нажми для досье</span></div><div id="top-artists-list" class="space-y-2.5 max-h-[520px] overflow-y-auto pr-1"></div></div>
-      <div class="card p-5"><div class="flex items-center justify-between mb-4"><h2 class="text-base font-bold">🔥 Топ треков</h2><span class="text-xs text-gray-400">Кликни ▶ для запуска</span></div><div id="top-tracks-list" class="space-y-2.5 max-h-[520px] overflow-y-auto pr-1"></div></div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div class="card p-4 md:p-5"><div class="flex items-center justify-between mb-3"><h2 class="text-sm md:text-base font-bold">👑 Топ артистов</h2><span class="text-[11px] text-gray-400">Нажми для досье</span></div><div id="top-artists-list" class="space-y-2 max-h-[480px] overflow-y-auto pr-1"></div></div>
+      <div class="card p-4 md:p-5"><div class="flex items-center justify-between mb-3"><h2 class="text-sm md:text-base font-bold">🔥 Топ треков</h2><span class="text-[11px] text-gray-400">Кликни ▶ для запуска</span></div><div id="top-tracks-list" class="space-y-2 max-h-[480px] overflow-y-auto pr-1"></div></div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="card p-5"><h2 class="text-base font-bold mb-4">🕒 Музыкальные биоритмы (по часам)</h2><canvas id="hoursChart" height="190"></canvas></div>
-      <div class="card p-5"><h2 class="text-base font-bold mb-4">📅 Любимые дни недели</h2><canvas id="daysChart" height="190"></canvas></div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div class="card p-4 md:p-5"><h2 class="text-sm md:text-base font-bold mb-3">🕒 Музыкальные биоритмы (по часам)</h2><canvas id="hoursChart" height="190"></canvas></div>
+      <div class="card p-4 md:p-5"><h2 class="text-sm md:text-base font-bold mb-3">📅 Любимые дни недели</h2><canvas id="daysChart" height="190"></canvas></div>
     </div>
 
-    <div class="card p-5">
-      <h2 class="text-base font-bold mb-4">⚡ Последние прослушивания</h2>
-      <div id="recent-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+    <div class="card p-4 md:p-5">
+      <h2 class="text-sm md:text-base font-bold mb-3">⚡ Последние прослушивания</h2>
+      <div id="recent-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5"></div>
     </div>
   </div>
 
-  <div id="sec-eras" class="hidden space-y-6">
-    <div class="card p-5"><h2 class="text-lg font-bold mb-1">👑 Твои музыкальные Эры (По месяцам)</h2><p class="text-xs text-gray-400 mb-5">Главный артист и хит каждого месяца</p><div id="eras-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div></div>
-    <div class="card p-5"><h2 class="text-lg font-bold mb-4">📈 Динамика по месяцам</h2><canvas id="monthlyChart" height="110"></canvas></div>
-    <div class="card p-5"><h2 class="text-lg font-bold mb-4">🟩 Тепловая карта активности (180 дней)</h2><div id="heatmap-box" class="flex flex-wrap gap-1.5"></div></div>
+  <div id="sec-eras" class="hidden space-y-5">
+    <div class="card p-4 md:p-5"><h2 class="text-base md:text-lg font-bold mb-1">👑 Твои музыкальные Эры (По месяцам)</h2><p class="text-xs text-gray-400 mb-4">Главный артист и хит каждого месяца</p><div id="eras-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5"></div></div>
+    <div class="card p-4 md:p-5"><h2 class="text-base md:text-lg font-bold mb-3">📈 Динамика по месяцам</h2><canvas id="monthlyChart" height="130"></canvas></div>
+    <div class="card p-4 md:p-5"><h2 class="text-base md:text-lg font-bold mb-3">🟩 Тепловая карта активности (180 дней)</h2><div id="heatmap-box" class="flex flex-wrap gap-1.5"></div></div>
   </div>
 
-  <div id="sec-battle" class="hidden space-y-6">
-    <div class="card p-5">
-      <h2 class="text-lg font-bold mb-2">⚔️ Битва титанов: сравни двух артистов</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-5">
-        <select id="battle-a1" onchange="runBattle()" class="w-full bg-[#090c10] border border-[#1e2533] rounded-xl px-4 py-2.5 text-sm font-bold text-white"></select>
-        <select id="battle-a2" onchange="runBattle()" class="w-full bg-[#090c10] border border-[#1e2533] rounded-xl px-4 py-2.5 text-sm font-bold text-white"></select>
+  <div id="sec-battle" class="hidden space-y-5">
+    <div class="card p-4 md:p-5">
+      <h2 class="text-base md:text-lg font-bold mb-2">⚔️ Битва титанов: сравни двух артистов</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 my-4">
+        <select id="battle-a1" onchange="runBattle()" class="w-full bg-[#090c10] border border-[#1e2533] rounded-xl px-3.5 py-2.5 text-sm font-bold text-white"></select>
+        <select id="battle-a2" onchange="runBattle()" class="w-full bg-[#090c10] border border-[#1e2533] rounded-xl px-3.5 py-2.5 text-sm font-bold text-white"></select>
       </div>
       <div id="battle-arena"></div>
     </div>
   </div>
 
-  <div id="sec-gems" class="hidden space-y-6">
-    <div class="card p-5">
-      <h2 class="text-lg font-bold mb-2">🔍 Мгновенный поиск по истории</h2>
-      <input type="text" id="search-input" oninput="runSearch()" placeholder="Введи песню или артиста..." class="w-full bg-[#090c10] border border-[#1e2533] focus:border-[#1ed760] outline-none rounded-xl px-4 py-3 text-sm text-white mb-4">
+  <div id="sec-gems" class="hidden space-y-5">
+    <div class="card p-4 md:p-5">
+      <h2 class="text-base md:text-lg font-bold mb-2">🔍 Мгновенный поиск по истории</h2>
+      <input type="text" id="search-input" oninput="runSearch()" placeholder="Введи песню или артиста..." class="w-full bg-[#090c10] border border-[#1e2533] focus:border-[#1ed760] outline-none rounded-xl px-4 py-2.5 text-sm text-white mb-3">
       <div id="search-results" class="space-y-2 max-h-80 overflow-y-auto"></div>
     </div>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="card p-5"><h2 class="text-base font-bold mb-1">💎 Забытые фавориты</h2><p class="text-xs text-gray-400 mb-4">Хиты, которые ты не включала больше 30 дней</p><div id="forgotten-list" class="space-y-2.5"></div></div>
-      <div class="card p-5"><h2 class="text-base font-bold mb-1">🔁 Самая глубокая дискография</h2><p class="text-xs text-gray-400 mb-4">Артисты с наибольшим числом разных песен</p><div id="diversity-list" class="space-y-2.5"></div></div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div class="card p-4 md:p-5"><h2 class="text-sm md:text-base font-bold mb-1">💎 Забытые фавориты</h2><p class="text-xs text-gray-400 mb-3">Хиты, которые ты не включала больше 30 дней</p><div id="forgotten-list" class="space-y-2"></div></div>
+      <div class="card p-4 md:p-5"><h2 class="text-sm md:text-base font-bold mb-1">🔁 Самая глубокая дискография</h2><p class="text-xs text-gray-400 mb-3">Артисты с наибольшим числом разных песен</p><div id="diversity-list" class="space-y-2"></div></div>
     </div>
   </div>
 </main>
 
-<div id="artist-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-  <div class="card max-w-lg w-full p-6 relative border border-gray-700">
-    <button onclick="document.getElementById('artist-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">✕</button>
+<!-- Модальное окно досье артиста -->
+<div id="artist-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-3.5">
+  <div class="card max-w-lg w-full p-5 relative border border-gray-700">
+    <button onclick="document.getElementById('artist-modal').classList.add('hidden')" class="absolute top-3.5 right-4 text-gray-400 hover:text-white text-xl">✕</button>
     <div id="artist-modal-content"></div>
   </div>
 </div>
 
-<div id="recap-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
-  <div class="max-w-md w-full my-8">
+<!-- Модальное окно Рекапа -->
+<div id="recap-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden z-50 flex items-center justify-center p-3.5 overflow-y-auto">
+  <div class="max-w-md w-full my-6">
     <div class="flex justify-between items-center mb-3">
-      <span class="text-sm font-bold text-gray-300">Твоя карточка:</span>
+      <span class="text-xs md:text-sm font-bold text-gray-300">Твоя карточка:</span>
       <div class="flex gap-2">
-        <button onclick="downloadRecapImage()" class="bg-accent px-4 py-1.5 rounded-lg text-xs font-bold">💾 Скачать PNG</button>
+        <button onclick="downloadRecapImage()" class="bg-accent px-3.5 py-1.5 rounded-lg text-xs font-bold">💾 Скачать PNG</button>
         <button onclick="document.getElementById('recap-modal').classList.add('hidden')" class="bg-gray-800 px-3 py-1.5 rounded-lg text-xs text-white">Закрыть</button>
       </div>
     </div>
-    <div id="recap-capture" class="bg-gradient-to-b from-[#111c16] via-[#0c1017] to-[#090c10] p-6 rounded-3xl border border-[#1ed760]/30 shadow-2xl">
-      <div class="flex justify-between items-center border-b border-white/10 pb-4">
-        <div><p class="text-[10px] uppercase tracking-widest text-[#1ed760] font-bold">YOUTUBE MUSIC RECAP</p><h3 class="text-2xl font-extrabold text-white mt-0.5" id="recap-title">За всё время</h3></div>
-        <div class="text-right"><p class="text-xs text-gray-400" id="recap-dates"></p><p class="text-sm font-bold accent">YTM.stats PRO</p></div>
+    <div id="recap-capture" class="bg-gradient-to-b from-[#111c16] via-[#0c1017] to-[#090c10] p-5 rounded-3xl border border-[#1ed760]/30 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-white/10 pb-3.5">
+        <div><p class="text-[10px] uppercase tracking-widest text-[#1ed760] font-bold">YOUTUBE MUSIC RECAP</p><h3 class="text-xl md:text-2xl font-extrabold text-white mt-0.5" id="recap-title">За всё время</h3></div>
+        <div class="text-right"><p class="text-[11px] text-gray-400" id="recap-dates"></p><p class="text-xs font-bold accent">YTM.stats PRO</p></div>
       </div>
-      <div id="recap-grid-covers" class="grid grid-cols-3 gap-2 my-5"></div>
-      <div class="grid grid-cols-3 gap-2 bg-white/5 rounded-2xl p-3 mb-5 text-center">
-        <div><p class="text-[10px] text-gray-400 uppercase">Стримов</p><p class="text-lg font-extrabold text-[#1ed760]" id="recap-streams">0</p></div>
-        <div><p class="text-[10px] text-gray-400 uppercase">Минут</p><p class="text-lg font-extrabold text-white" id="recap-minutes">0</p></div>
-        <div><p class="text-[10px] text-gray-400 uppercase">Стрик</p><p class="text-lg font-extrabold text-amber-400" id="recap-streak">0 дн.</p></div>
+      <div id="recap-grid-covers" class="grid grid-cols-3 gap-2 my-4"></div>
+      <div class="grid grid-cols-3 gap-2 bg-white/5 rounded-2xl p-2.5 mb-4 text-center">
+        <div><p class="text-[10px] text-gray-400 uppercase">Стримов</p><p class="text-base md:text-lg font-extrabold text-[#1ed760]" id="recap-streams">0</p></div>
+        <div><p class="text-[10px] text-gray-400 uppercase">Минут</p><p class="text-base md:text-lg font-extrabold text-white" id="recap-minutes">0</p></div>
+        <div><p class="text-[10px] text-gray-400 uppercase">Стрик</p><p class="text-base md:text-lg font-extrabold text-amber-400" id="recap-streak">0 дн.</p></div>
       </div>
-      <div class="grid grid-cols-2 gap-4 text-xs">
-        <div><p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-2">👑 ТОП АРТИСТОВ</p><div id="recap-top-artists" class="space-y-1.5"></div></div>
-        <div><p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-2">🔥 ТОП ТРЕКОВ</p><div id="recap-top-tracks" class="space-y-1.5"></div></div>
+      <div class="grid grid-cols-2 gap-3 text-xs">
+        <div><p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1.5">👑 ТОП АРТИСТОВ</p><div id="recap-top-artists" class="space-y-1"></div></div>
+        <div><p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1.5">🔥 ТОП ТРЕКОВ</p><div id="recap-top-tracks" class="space-y-1"></div></div>
       </div>
     </div>
   </div>
@@ -180,10 +235,17 @@ function fmtDateTime(d) {
 function switchSection(sec) {
   ['overview', 'eras', 'battle', 'gems'].forEach(s => {
     document.getElementById('sec-' + s).classList.add('hidden');
-    document.getElementById('nav-' + s).classList.remove('active');
+    const nd = document.getElementById('nav-d-' + s);
+    const nm = document.getElementById('nav-m-' + s);
+    if (nd) nd.classList.remove('active');
+    if (nm) nm.classList.remove('active');
   });
   document.getElementById('sec-' + sec).classList.remove('hidden');
-  document.getElementById('nav-' + sec).classList.add('active');
+  const ad = document.getElementById('nav-d-' + sec);
+  const am = document.getElementById('nav-m-' + sec);
+  if (ad) ad.classList.add('active');
+  if (am) am.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   if (sec === 'battle') runBattle();
 }
 
@@ -292,19 +354,24 @@ function computeClientStats(days) {
 function loadStats(days) {
   currentDaysFilter = days;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.getElementById('tab-' + days);
-  if (btn) btn.classList.add('active');
+  const bd = document.getElementById('tab-d-' + days);
+  const bm = document.getElementById('tab-m-' + days);
+  if (bd) bd.classList.add('active');
+  if (bm) bm.classList.add('active');
 
   const data = computeClientStats(days);
   if (!data) return;
   currentData = data;
 
   if (RAW.now_playing) {
-    document.getElementById('live-title').innerText = `${RAW.now_playing.artist} — ${RAW.now_playing.title}`;
-    document.getElementById('live-sub').innerText = `Обновлено: ${RAW.updated_at}`;
+    const npText = `${RAW.now_playing.artist} — ${RAW.now_playing.title}`;
+    document.getElementById('live-title-desktop').innerText = npText;
+    document.getElementById('live-sub-desktop').innerText = `Обновлено: ${RAW.updated_at}`;
+    document.getElementById('live-title-mobile').innerText = npText;
+    document.getElementById('live-sub-mobile').innerText = RAW.updated_at.split(' ')[1] || RAW.updated_at;
   }
 
-  document.getElementById('date-range-label').innerText = `Период: ${data.first_date} — ${data.last_date}`;
+  document.getElementById('date-range-label').innerText = `${data.first_date} — ${data.last_date}`;
   document.getElementById('stat-streams').innerText = data.total_streams.toLocaleString('ru-RU');
   document.getElementById('stat-sources').innerText = `YTM: ${data.ytm_streams} | Клипы: ${data.mv_streams}`;
   document.getElementById('stat-minutes').innerText = data.total_minutes.toLocaleString('ru-RU');
@@ -316,32 +383,32 @@ function loadStats(days) {
   document.getElementById('stat-active-days').innerText = `${data.active_days} активных дн.`;
 
   document.getElementById('achievements-grid').innerHTML = data.achievements.map(a => `
-    <div class="card p-4 flex items-center gap-3.5 border-l-4 border-l-[#1ed760]">
+    <div class="card p-3.5 md:p-4 flex items-center gap-3.5 border-l-4 border-l-[#1ed760]">
       <div class="text-2xl">${a.icon}</div>
-      <div class="min-w-0"><p class="text-xs text-gray-400 font-semibold">${a.title}</p><p class="text-sm font-bold text-white truncate mt-0.5">${a.value}</p><p class="text-[11px] text-gray-500 truncate">${a.sub}</p></div>
+      <div class="min-w-0"><p class="text-[11px] text-gray-400 font-semibold">${a.title}</p><p class="text-sm font-bold text-white truncate mt-0.5">${a.value}</p><p class="text-[11px] text-gray-500 truncate">${a.sub}</p></div>
     </div>
   `).join('');
 
   document.getElementById('top-artists-list').innerHTML = data.top_artists.map((a, i) => `
-    <div onclick="showArtistDetails('${a.artist.replace(/'/g, "\\'")}')" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition">
-      <div class="flex items-center gap-3 min-w-0">
+    <div onclick="showArtistDetails('${a.artist.replace(/'/g, "\\'")}')" class="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 cursor-pointer transition">
+      <div class="flex items-center gap-2.5 min-w-0">
         <span class="w-6 text-xs font-bold ${i < 3 ? 'accent' : 'text-gray-500'}">#${i + 1}</span>
-        <img src="https://i.ytimg.com/vi/${a.sample_vid}/mqdefault.jpg" class="w-11 h-11 rounded-full object-cover border border-gray-700 flex-shrink-0">
-        <div class="truncate"><p class="font-bold text-sm text-white truncate">${a.artist}</p><p class="text-xs text-gray-400">~${a.minutes} мин. • ${a.unique_songs} песен</p></div>
+        <img src="https://i.ytimg.com/vi/${a.sample_vid}/mqdefault.jpg" class="w-10 h-10 rounded-full object-cover border border-gray-700 flex-shrink-0">
+        <div class="truncate"><p class="font-bold text-xs md:text-sm text-white truncate">${a.artist}</p><p class="text-[11px] text-gray-400">~${a.minutes} мин. • ${a.unique_songs} песен</p></div>
       </div>
-      <span class="px-2.5 py-1 rounded-lg bg-white/5 text-xs font-bold accent ml-2 flex-shrink-0">${a.count} стр.</span>
+      <span class="px-2 py-1 rounded-lg bg-white/5 text-xs font-bold accent ml-2 flex-shrink-0">${a.count} стр.</span>
     </div>
   `).join('');
 
   document.getElementById('top-tracks-list').innerHTML = data.top_tracks.map((t, i) => `
-    <div class="flex items-center justify-between p-2.5 rounded-xl hover:bg-white/5 transition">
-      <div class="flex items-center gap-3 min-w-0">
+    <div class="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition">
+      <div class="flex items-center gap-2.5 min-w-0">
         <span class="w-6 text-xs font-bold ${i < 3 ? 'accent' : 'text-gray-500'}">#${i + 1}</span>
-        <img src="https://i.ytimg.com/vi/${t.video_id}/mqdefault.jpg" class="w-11 h-11 rounded-lg object-cover border border-gray-700 flex-shrink-0">
-        <div class="truncate"><p class="font-bold text-sm text-white truncate">${t.title}</p><p class="text-xs text-gray-400 truncate">${t.artist}</p></div>
+        <img src="https://i.ytimg.com/vi/${t.video_id}/mqdefault.jpg" class="w-10 h-10 rounded-lg object-cover border border-gray-700 flex-shrink-0">
+        <div class="truncate"><p class="font-bold text-xs md:text-sm text-white truncate">${t.title}</p><p class="text-[11px] text-gray-400 truncate">${t.artist}</p></div>
       </div>
-      <div class="flex items-center gap-2 flex-shrink-0 ml-2">
-        <span class="px-2.5 py-1 rounded-lg bg-white/5 text-xs font-bold">${t.count}x</span>
+      <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
+        <span class="px-2 py-1 rounded-lg bg-white/5 text-xs font-bold">${t.count}x</span>
         <a href="https://music.youtube.com/watch?v=${t.video_id}" target="_blank" class="w-7 h-7 rounded-full bg-white/10 hover:bg-[#1ed760] hover:text-black flex items-center justify-center text-xs transition">▶</a>
       </div>
     </div>
@@ -351,7 +418,7 @@ function loadStats(days) {
 
   document.getElementById('recent-list').innerHTML = data.recent.map(r => `
     <div class="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
-      <img src="https://i.ytimg.com/vi/${r.video_id}/mqdefault.jpg" class="w-12 h-12 rounded-lg object-cover flex-shrink-0">
+      <img src="https://i.ytimg.com/vi/${r.video_id}/mqdefault.jpg" class="w-11 h-11 rounded-lg object-cover flex-shrink-0">
       <div class="min-w-0 flex-1">
         <p class="text-xs font-bold text-white truncate">${r.title}</p>
         <p class="text-[11px] text-gray-400 truncate">${r.artist}</p>
@@ -361,8 +428,8 @@ function loadStats(days) {
   `).join('');
 
   document.getElementById('eras-grid').innerHTML = data.eras.map(e => `
-    <div class="bg-white/[0.03] border border-white/5 rounded-2xl p-4 flex items-center gap-3.5">
-      <img src="https://i.ytimg.com/vi/${e.sample_vid}/mqdefault.jpg" class="w-14 h-14 rounded-xl object-cover border border-[#1ed760]/40 flex-shrink-0">
+    <div class="bg-white/[0.03] border border-white/5 rounded-2xl p-3.5 flex items-center gap-3.5">
+      <img src="https://i.ytimg.com/vi/${e.sample_vid}/mqdefault.jpg" class="w-13 h-13 rounded-xl object-cover border border-[#1ed760]/40 flex-shrink-0">
       <div class="min-w-0"><span class="text-[10px] font-bold uppercase tracking-wider accent">${e.month}</span><p class="text-sm font-extrabold text-white truncate mt-0.5">Эра ${e.top_artist}</p><p class="text-[11px] text-gray-400 truncate">Хит: ${e.top_track}</p><p class="text-[10px] text-gray-500 mt-0.5">За месяц: ${e.total_streams} стр.</p></div>
     </div>
   `).join('');
@@ -373,7 +440,7 @@ function loadStats(days) {
     else if (d.count >= 12) bg = 'bg-emerald-500/70';
     else if (d.count >= 5) bg = 'bg-emerald-700/60';
     else if (d.count >= 1) bg = 'bg-emerald-900/60';
-    return `<div title="${d.date}: ${d.count} стр." class="w-4 h-4 rounded-sm ${bg}"></div>`;
+    return `<div title="${d.date}: ${d.count} стр." class="w-3.5 h-3.5 md:w-4 md:h-4 rounded-sm ${bg}"></div>`;
   }).join('');
 
   document.getElementById('forgotten-list').innerHTML = data.forgotten_gems.map(g => `
@@ -402,7 +469,7 @@ function loadStats(days) {
 function renderCharts(hoursData, daysData, monthlyData) {
   const ctxH = document.getElementById('hoursChart').getContext('2d');
   if (hoursChartInstance) hoursChartInstance.destroy();
-  hoursChartInstance = new Chart(ctxH, { type: 'bar', data: { labels: Array.from({length: 24}, (_, i) => String(i).padStart(2, '0') + ':00'), datasets: [{ data: hoursData, backgroundColor: '#1ed760', borderRadius: 4 }] }, options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } }, y: { grid: { color: '#1e2533' }, ticks: { color: '#9ca3af' } } } } });
+  hoursChartInstance = new Chart(ctxH, { type: 'bar', data: { labels: Array.from({length: 24}, (_, i) => String(i).padStart(2, '0') + ':00'), datasets: [{ data: hoursData, backgroundColor: '#1ed760', borderRadius: 4 }] }, options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9 } } }, y: { grid: { color: '#1e2533' }, ticks: { color: '#9ca3af' } } } } });
 
   const ctxD = document.getElementById('daysChart').getContext('2d');
   if (daysChartInstance) daysChartInstance.destroy();
@@ -433,16 +500,16 @@ function showArtistDetails(name) {
   const d = getArtistObj(name);
   if (!d) return;
   document.getElementById('artist-modal-content').innerHTML = `
-    <div class="flex items-center gap-4 border-b border-gray-800 pb-4">
-      <img src="https://i.ytimg.com/vi/${d.sample_vid}/hqdefault.jpg" class="w-16 h-16 rounded-full object-cover border-2 border-[#1ed760]">
-      <div><span class="text-[10px] uppercase tracking-widest accent font-bold">Досье артиста</span><h3 class="text-2xl font-extrabold text-white">${d.artist}</h3><p class="text-xs text-gray-400">${d.total_streams} стримов • ~${d.total_minutes} минут (${d.share}% от эфира)</p></div>
+    <div class="flex items-center gap-3.5 border-b border-gray-800 pb-3.5">
+      <img src="https://i.ytimg.com/vi/${d.sample_vid}/hqdefault.jpg" class="w-14 h-14 rounded-full object-cover border-2 border-[#1ed760]">
+      <div><span class="text-[10px] uppercase tracking-widest accent font-bold">Досье артиста</span><h3 class="text-xl font-extrabold text-white">${d.artist}</h3><p class="text-xs text-gray-400">${d.total_streams} стримов • ~${d.total_minutes} мин (${d.share}%)</p></div>
     </div>
-    <div class="grid grid-cols-2 gap-3 my-4">
-      <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">🌱 Первая встреча</p><p class="text-xs font-bold text-white mt-1">${d.first_stream_date}</p><p class="text-[11px] accent truncate mt-0.5">${d.first_stream_track}</p></div>
-      <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">⚡ Последнее включение</p><p class="text-xs font-bold text-white mt-1">${d.last_stream_date}</p><p class="text-[11px] text-gray-300 truncate mt-0.5">${d.last_stream_track}</p></div>
+    <div class="grid grid-cols-2 gap-2.5 my-3.5">
+      <div class="bg-white/5 p-2.5 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">🌱 Первая встреча</p><p class="text-xs font-bold text-white mt-0.5">${d.first_stream_date}</p><p class="text-[11px] accent truncate mt-0.5">${d.first_stream_track}</p></div>
+      <div class="bg-white/5 p-2.5 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">⚡ Последний раз</p><p class="text-xs font-bold text-white mt-0.5">${d.last_stream_date}</p><p class="text-[11px] text-gray-300 truncate mt-0.5">${d.last_stream_track}</p></div>
     </div>
     <p class="text-xs font-bold uppercase text-gray-400 mb-2">Любимые треки (${d.unique_tracks}):</p>
-    <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+    <div class="space-y-1.5 max-h-56 overflow-y-auto pr-1">
       ${d.tracks.map((t, idx) => `<div class="flex justify-between items-center bg-white/[0.03] px-3 py-2 rounded-lg text-xs"><span class="truncate pr-2"><b>#${idx+1}</b>${t.title}</span><span class="accent font-bold flex-shrink-0">${t.count}x</span></div>`).join('')}
     </div>
   `;
@@ -459,14 +526,14 @@ function runBattle() {
     { label: 'Уникальных треков', v1: r1.unique_tracks, v2: r2.unique_tracks, suffix: ' песен' }
   ];
   document.getElementById('battle-arena').innerHTML = `
-    <div class="grid grid-cols-2 gap-4 text-center mb-6">
-      <div class="bg-white/[0.03] p-4 rounded-2xl border ${r1.total_streams >= r2.total_streams ? 'border-[#1ed760]' : 'border-white/5'}"><img src="https://i.ytimg.com/vi/${r1.sample_vid}/hqdefault.jpg" class="w-16 h-16 rounded-full mx-auto object-cover border-2 border-[#1ed760]"><h3 class="text-base font-extrabold mt-2">${r1.artist}</h3><p class="text-xs accent mt-1">${r1.tracks[0]?.title || '-'} (${r1.tracks[0]?.count || 0}x)</p></div>
-      <div class="bg-white/[0.03] p-4 rounded-2xl border ${r2.total_streams > r1.total_streams ? 'border-[#1ed760]' : 'border-white/5'}"><img src="https://i.ytimg.com/vi/${r2.sample_vid}/hqdefault.jpg" class="w-16 h-16 rounded-full mx-auto object-cover border-2 border-emerald-400"><h3 class="text-base font-extrabold mt-2">${r2.artist}</h3><p class="text-xs accent mt-1">${r2.tracks[0]?.title || '-'} (${r2.tracks[0]?.count || 0}x)</p></div>
+    <div class="grid grid-cols-2 gap-3 text-center mb-5">
+      <div class="bg-white/[0.03] p-3.5 rounded-2xl border ${r1.total_streams >= r2.total_streams ? 'border-[#1ed760]' : 'border-white/5'}"><img src="https://i.ytimg.com/vi/${r1.sample_vid}/hqdefault.jpg" class="w-14 h-14 rounded-full mx-auto object-cover border-2 border-[#1ed760]"><h3 class="text-sm font-extrabold mt-2 truncate">${r1.artist}</h3><p class="text-[11px] accent mt-0.5 truncate">${r1.tracks[0]?.title || '-'} (${r1.tracks[0]?.count || 0}x)</p></div>
+      <div class="bg-white/[0.03] p-3.5 rounded-2xl border ${r2.total_streams > r1.total_streams ? 'border-[#1ed760]' : 'border-white/5'}"><img src="https://i.ytimg.com/vi/${r2.sample_vid}/hqdefault.jpg" class="w-14 h-14 rounded-full mx-auto object-cover border-2 border-emerald-400"><h3 class="text-sm font-extrabold mt-2 truncate">${r2.artist}</h3><p class="text-[11px] accent mt-0.5 truncate">${r2.tracks[0]?.title || '-'} (${r2.tracks[0]?.count || 0}x)</p></div>
     </div>
     <div class="space-y-3">
       ${metrics.map(m => {
         const p1 = Math.round((m.v1 / ((m.v1 + m.v2) || 1)) * 100);
-        return `<div class="bg-white/[0.02] p-3 rounded-xl"><div class="flex justify-between text-xs font-bold mb-1"><span>${m.v1}${m.suffix}</span><span class="text-gray-400">${m.label}</span><span>${m.v2}${m.suffix}</span></div><div class="w-full h-2.5 bg-gray-800 rounded-full overflow-hidden flex"><div style="width:${p1}%" class="bg-[#1ed760] h-full"></div><div style="width:${100-p1}%" class="bg-emerald-700 h-full"></div></div></div>`;
+        return `<div class="bg-white/[0.02] p-3 rounded-xl"><div class="flex justify-between text-xs font-bold mb-1"><span>${m.v1}${m.suffix}</span><span class="text-gray-400 text-[11px]">${m.label}</span><span>${m.v2}${m.suffix}</span></div><div class="w-full h-2.5 bg-gray-800 rounded-full overflow-hidden flex"><div style="width:${p1}%" class="bg-[#1ed760] h-full"></div><div style="width:${100-p1}%" class="bg-emerald-700 h-full"></div></div></div>`;
       }).join('')}
     </div>
   `;
@@ -485,9 +552,9 @@ function runSearch() {
     }
   });
   box.innerHTML = Object.keys(tc).sort((a,b) => tc[b] - tc[a]).slice(0, 20).map(k => `
-    <div class="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03]">
-      <div class="flex items-center gap-3 min-w-0"><img src="https://i.ytimg.com/vi/${meta[k].video_id}/mqdefault.jpg" class="w-10 h-10 rounded-lg object-cover"><div class="truncate"><p class="text-xs font-bold text-white truncate">${meta[k].title}</p><p class="text-[11px] text-gray-400 truncate">${meta[k].artist}</p></div></div>
-      <span class="px-2.5 py-1 rounded-lg bg-white/5 text-xs font-bold accent">${tc[k]} стр.</span>
+    <div class="flex items-center justify-between p-2 rounded-xl bg-white/[0.03]">
+      <div class="flex items-center gap-2.5 min-w-0"><img src="https://i.ytimg.com/vi/${meta[k].video_id}/mqdefault.jpg" class="w-9 h-9 rounded-lg object-cover"><div class="truncate"><p class="text-xs font-bold text-white truncate">${meta[k].title}</p><p class="text-[11px] text-gray-400 truncate">${meta[k].artist}</p></div></div>
+      <span class="px-2 py-1 rounded-lg bg-white/5 text-xs font-bold accent">${tc[k]} стр.</span>
     </div>
   `).join('');
 }
