@@ -64,7 +64,7 @@ def enrich_genres(cur, conn):
             if tags:
                 cur.execute("UPDATE streams SET genres = ? WHERE artist = ?", (tags, artist))
                 updated += 1
-            time.sleep(0.1) # small delay for API
+            time.sleep(0.1)
         conn.commit()
         print(f"[OK] Added genres for {updated} artists.")
 
@@ -98,7 +98,6 @@ def sync_ytmusic():
         conn = sqlite3.connect(DB_FILE)
         cur = conn.cursor()
         
-        # Запускаем обогатитель жанров перед синхронизацией
         enrich_genres(cur, conn)
 
         if not history:
@@ -155,8 +154,10 @@ def sync_ytmusic():
                 if "XLOV" in title.upper() or "엑스러브" in title: artist = "XLOV"
                 dur_sec = item.get("duration_seconds") or parse_duration_to_sec(item.get("duration", ""))
                 
-                # Получаем теги для новой песни на лету
-                tags = get_artist_tags(artist)
+                # Ищем теги в базе, если нет - берем с Last.fm
+                cur.execute("SELECT genres FROM streams WHERE artist = ? LIMIT 1", (artist,))
+                db_tags = cur.fetchone()
+                tags = db_tags[0] if db_tags and db_tags[0] else get_artist_tags(artist)
 
                 while cursor_ts <= last_db_ts: cursor_ts += 2
                 dt_iso = datetime.fromtimestamp(cursor_ts, tz=LOCAL_TZ).isoformat()
@@ -182,7 +183,6 @@ def sync_ytmusic():
 def export_web_data(now_playing):
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
-    # Теперь мы вытаскиваем и колонку genres
     cur.execute("SELECT video_id, title, artist, source, timestamp, duration_sec, genres FROM streams ORDER BY timestamp ASC")
     rows = cur.fetchall()
     conn.close()
