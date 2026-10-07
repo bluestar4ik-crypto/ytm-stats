@@ -17,6 +17,8 @@
   .tab-btn.active { background-color: #1ed760; color: #090c10; font-weight: 700; }
   .nav-pill.active { border-bottom: 2px solid #1ed760; color: #1ed760; font-weight: 700; }
   .mob-nav.active { color: #1ed760; font-weight: 700; }
+  .genre-btn { border: 1px solid #1e2533; background: #12161f; color: #9ca3af; transition: all 0.2s; }
+  .genre-btn.active { background: rgba(30, 215, 96, 0.15); border-color: #1ed760; color: #1ed760; font-weight: bold; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -26,11 +28,8 @@
 </head>
 <body class="min-h-screen pb-24 md:pb-16">
 
-<!-- Компактная адаптивная шапка -->
 <header class="sticky top-0 z-30 bg-[#090c10]/95 backdrop-blur-md border-b border-[#1e2533] px-3.5 md:px-6 py-2.5 md:py-3.5">
   <div class="max-w-7xl mx-auto space-y-2.5">
-    
-    <!-- Верхний ряд: Лого + Live (на ПК) + Кнопка Рекапа справа -->
     <div class="flex items-center justify-between gap-2">
       <div class="flex items-center gap-2.5 min-w-0">
         <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-accent flex items-center justify-center font-extrabold text-lg md:text-xl shadow-lg shadow-green-500/20 flex-shrink-0">⚡</div>
@@ -41,8 +40,6 @@
           </div>
           <p class="text-[11px] text-gray-400 truncate" id="date-range-label">Загрузка...</p>
         </div>
-
-        <!-- Плашка эфира для ПК -->
         <div class="hidden lg:flex items-center gap-2.5 bg-[#12161f] border border-[#1e2533] px-3 py-1.5 rounded-xl ml-3">
           <div class="w-2 h-2 rounded-full bg-[#1ed760] animate-ping flex-shrink-0"></div>
           <div class="text-xs max-w-[240px]">
@@ -51,9 +48,7 @@
           </div>
         </div>
       </div>
-
       <div class="flex items-center gap-2 flex-shrink-0">
-        <!-- Переключатель периодов для ПК -->
         <div class="hidden md:flex items-center gap-1 bg-[#12161f] p-1 rounded-xl border border-[#1e2533]">
           <button onclick="loadStats(7)" id="tab-d-7" class="tab-btn px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">7д</button>
           <button onclick="loadStats(30)" id="tab-d-30" class="tab-btn px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">4 нед</button>
@@ -61,14 +56,10 @@
           <button onclick="loadStats(365)" id="tab-d-365" class="tab-btn px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">Год</button>
           <button onclick="loadStats(0)" id="tab-d-0" class="tab-btn active px-3 py-1.5 rounded-lg text-xs transition">Всё время</button>
         </div>
-
-        <button onclick="openRecapModal()" class="bg-accent hover:opacity-90 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition shadow-lg shadow-green-500/20">
-          📸 Рекап
-        </button>
+        <button onclick="openRecapModal()" class="bg-accent hover:opacity-90 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition shadow-lg shadow-green-500/20">📸 Рекап</button>
       </div>
     </div>
 
-    <!-- Компактная строка живого эфира для мобилки -->
     <div class="flex lg:hidden items-center justify-between bg-[#12161f] border border-[#1e2533] px-3 py-1.5 rounded-xl text-xs">
       <div class="flex items-center gap-2 min-w-0 pr-2">
         <div class="w-2 h-2 rounded-full bg-[#1ed760] animate-ping flex-shrink-0"></div>
@@ -77,7 +68,6 @@
       <span class="text-[10px] text-gray-400 flex-shrink-0" id="live-sub-mobile">24/7</span>
     </div>
 
-    <!-- Ровная сетка периодов на всю ширину для мобилки -->
     <div class="grid grid-cols-5 md:hidden gap-1 bg-[#12161f] p-1 rounded-xl border border-[#1e2533] text-center">
       <button onclick="loadStats(7)" id="tab-m-7" class="tab-btn py-1.5 rounded-lg text-[11px] text-gray-300 transition">7д</button>
       <button onclick="loadStats(30)" id="tab-m-30" class="tab-btn py-1.5 rounded-lg text-[11px] text-gray-300 transition">4 нед</button>
@@ -86,7 +76,15 @@
       <button onclick="loadStats(0)" id="tab-m-0" class="tab-btn active py-1.5 rounded-lg text-[11px] transition">Всё</button>
     </div>
 
-    <!-- Вкладки для ПК -->
+    <!-- Новая панель жанров (Вайбов) -->
+    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+      <button onclick="setGenreFilter('')" id="g-all" class="genre-btn active px-3 py-1.5 rounded-full text-xs whitespace-nowrap">🌍 Все треки</button>
+      <button onclick="setGenreFilter('k-pop|korean')" id="g-kpop" class="genre-btn px-3 py-1.5 rounded-full text-xs whitespace-nowrap">🌸 K-pop</button>
+      <button onclick="setGenreFilter('rock|metal|punk|alternative')" id="g-rock" class="genre-btn px-3 py-1.5 rounded-full text-xs whitespace-nowrap">🎸 Рок & Альтернатива</button>
+      <button onclick="setGenreFilter('ukrainian')" id="g-ua" class="genre-btn px-3 py-1.5 rounded-full text-xs whitespace-nowrap">🇺🇦 Украинское</button>
+      <button onclick="setGenreFilter('pop|indie')" id="g-pop" class="genre-btn px-3 py-1.5 rounded-full text-xs whitespace-nowrap">🎧 Поп & Инди</button>
+    </div>
+
     <div class="hidden md:flex gap-6 pt-1 border-t border-white/5 text-xs text-gray-400 no-scrollbar">
       <button onclick="switchSection('overview')" id="nav-d-overview" class="nav-pill active pb-2">📊 Дашборд</button>
       <button onclick="switchSection('eras')" id="nav-d-eras" class="nav-pill pb-2 hover:text-white">👑 Музыкальные Эры</button>
@@ -96,29 +94,15 @@
   </div>
 </header>
 
-<!-- Нижнее меню для телефона (как в нативном приложении stats.fm) -->
 <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#090c10]/95 backdrop-blur-lg border-t border-[#1e2533] grid grid-cols-4 py-2 px-2 text-center text-[11px] text-gray-400">
-  <button onclick="switchSection('overview')" id="nav-m-overview" class="mob-nav active flex flex-col items-center gap-0.5 py-1">
-    <span class="text-base">📊</span>
-    <span>Дашборд</span>
-  </button>
-  <button onclick="switchSection('eras')" id="nav-m-eras" class="mob-nav flex flex-col items-center gap-0.5 py-1">
-    <span class="text-base">👑</span>
-    <span>Эры</span>
-  </button>
-  <button onclick="switchSection('battle')" id="nav-m-battle" class="mob-nav flex flex-col items-center gap-0.5 py-1">
-    <span class="text-base">⚔️️</span>
-    <span>Битва</span>
-  </button>
-  <button onclick="switchSection('gems')" id="nav-m-gems" class="mob-nav flex flex-col items-center gap-0.5 py-1">
-    <span class="text-base">💎</span>
-    <span>Поиск</span>
-  </button>
+  <button onclick="switchSection('overview')" id="nav-m-overview" class="mob-nav active flex flex-col items-center gap-0.5 py-1"><span class="text-base">📊</span><span>Дашборд</span></button>
+  <button onclick="switchSection('eras')" id="nav-m-eras" class="mob-nav flex flex-col items-center gap-0.5 py-1"><span class="text-base">👑</span><span>Эры</span></button>
+  <button onclick="switchSection('battle')" id="nav-m-battle" class="mob-nav flex flex-col items-center gap-0.5 py-1"><span class="text-base">⚔</span><span>Битва</span></button>
+  <button onclick="switchSection('gems')" id="nav-m-gems" class="mob-nav flex flex-col items-center gap-0.5 py-1"><span class="text-base">💎</span><span>Поиск</span></button>
 </nav>
 
 <main class="max-w-7xl mx-auto px-3.5 md:px-6 mt-4 md:mt-6 space-y-6">
   <div id="sec-overview" class="space-y-5">
-    <!-- Сетка главных цифр -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       <div class="card p-3.5 md:p-4"><p class="text-[10px] md:text-[11px] text-gray-400 uppercase font-semibold">Стримов</p><p class="text-xl md:text-2xl font-extrabold mt-0.5 accent" id="stat-streams">0</p><p class="text-[10px] md:text-[11px] text-gray-500 mt-0.5" id="stat-sources">YTM + Клипы</p></div>
       <div class="card p-3.5 md:p-4"><p class="text-[10px] md:text-[11px] text-gray-400 uppercase font-semibold">Минут музыки</p><p class="text-xl md:text-2xl font-extrabold mt-0.5" id="stat-minutes">0</p><p class="text-[10px] md:text-[11px] text-gray-500 mt-0.5" id="stat-hours">~0 часов</p></div>
@@ -176,7 +160,6 @@
   </div>
 </main>
 
-<!-- Модальное окно досье артиста -->
 <div id="artist-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-3.5">
   <div class="card max-w-lg w-full p-5 relative border border-gray-700">
     <button onclick="document.getElementById('artist-modal').classList.add('hidden')" class="absolute top-3.5 right-4 text-gray-400 hover:text-white text-xl">✕</button>
@@ -184,7 +167,6 @@
   </div>
 </div>
 
-<!-- Модальное окно Рекапа -->
 <div id="recap-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden z-50 flex items-center justify-center p-3.5 overflow-y-auto">
   <div class="max-w-md w-full my-6">
     <div class="flex justify-between items-center mb-3">
@@ -218,11 +200,12 @@ const RAW = window.YTM_CLOUD_DATA || { updated_at: "-", now_playing: null, strea
 const ALL_STREAMS = RAW.streams.map(r => ({
   video_id: r[0], title: r[1], artist: r[2],
   source: r[3] === 1 ? 'MV (YouTube)' : (r[3] === 2 ? 'Live Radar' : 'YouTube Music'),
-  ts: r[4], dur: r[5], dt: new Date(r[4] * 1000)
+  ts: r[4], dur: r[5], tags: (r[6] || '').toLowerCase(), dt: new Date(r[4] * 1000)
 }));
 
 let currentData = null;
 let currentDaysFilter = 0;
+let currentGenreFilter = '';
 let hoursChartInstance = null, daysChartInstance = null, monthlyChartInstance = null;
 
 function fmtDate(d) {
@@ -249,11 +232,34 @@ function switchSection(sec) {
   if (sec === 'battle') runBattle();
 }
 
+function setGenreFilter(genreStr) {
+  currentGenreFilter = genreStr;
+  document.querySelectorAll('.genre-btn').forEach(b => b.classList.remove('active'));
+  let btnId = 'g-all';
+  if (genreStr.includes('k-pop')) btnId = 'g-kpop';
+  else if (genreStr.includes('rock')) btnId = 'g-rock';
+  else if (genreStr.includes('ukrainian')) btnId = 'g-ua';
+  else if (genreStr.includes('pop')) btnId = 'g-pop';
+  document.getElementById(btnId).classList.add('active');
+  loadStats(currentDaysFilter);
+}
+
+function matchesGenre(itemTags) {
+  if (!currentGenreFilter) return true;
+  const targetTags = currentGenreFilter.split('|');
+  for (let t of targetTags) {
+    if (itemTags.includes(t)) return true;
+  }
+  return false;
+}
+
 function computeClientStats(days) {
-  if (!ALL_STREAMS.length) return null;
-  const maxTs = ALL_STREAMS[ALL_STREAMS.length - 1].ts;
+  const filteredStreams = ALL_STREAMS.filter(s => matchesGenre(s.tags));
+  if (!filteredStreams.length) return null;
+  const maxTs = filteredStreams[filteredStreams.length - 1].ts;
   const cutoff = days > 0 ? maxTs - (days * 86400) : 0;
-  const rows = ALL_STREAMS.filter(s => s.ts >= cutoff);
+  const rows = filteredStreams.filter(s => s.ts >= cutoff);
+  if (!rows.length) return null;
 
   let mv = 0, totalSec = 0;
   const aCnt = {}, aSec = {}, aVid = {}, aSongs = {};
@@ -344,7 +350,7 @@ function computeClientStats(days) {
     monthly_chart: { labels: mKeys, values: mKeys.map(k => mStreams[k]) },
     recent: rows.slice(-18).reverse(), eras, heatmap, forgotten_gems: forgotten, diversity_leaders: diversity,
     achievements: [
-      { icon: '👑', title: 'Главная одержимость', value: topArtists[0].artist, sub: `${topArtists[0].count} стримов (${topArtists[0].unique_songs} разных песен)` },
+      { icon: '👑', title: 'Одержимость жанром', value: topArtists[0].artist, sub: `${topArtists[0].count} стримов (${topArtists[0].unique_songs} разных песен)` },
       { icon: '🔥', title: 'Рекордный день', value: bestDay, sub: `${dayCounts[bestDay]} треков за сутки` },
       { icon: '🕒', title: 'Пиковый биоритм', value: `с ${String(peakH).padStart(2,'0')}:00 до ${String(peakH).padStart(2,'0')}:59`, sub: `Любимый час (${hours[peakH]} стр.)` }
     ]
@@ -481,7 +487,8 @@ function renderCharts(hoursData, daysData, monthlyData) {
 }
 
 function getArtistObj(name) {
-  const rows = ALL_STREAMS.filter(s => s.artist === name);
+  const filteredStreams = ALL_STREAMS.filter(s => matchesGenre(s.tags));
+  const rows = filteredStreams.filter(s => s.artist === name);
   if (!rows.length) return null;
   const tc = {};
   let sec = 0;
@@ -489,7 +496,7 @@ function getArtistObj(name) {
   const tracks = Object.keys(tc).sort((a,b) => tc[b] - tc[a]).map(t => ({ title: t, count: tc[t] }));
   return {
     artist: name, total_streams: rows.length, total_minutes: Math.floor(sec/60), unique_tracks: tracks.length,
-    share: ((rows.length * 100) / ALL_STREAMS.length).toFixed(1), sample_vid: rows[rows.length-1].video_id,
+    share: ((rows.length * 100) / filteredStreams.length).toFixed(1), sample_vid: rows[rows.length-1].video_id,
     first_stream_date: fmtDateTime(rows[0].dt), first_stream_track: rows[0].title,
     last_stream_date: fmtDateTime(rows[rows.length-1].dt), last_stream_track: rows[rows.length-1].title,
     tracks: tracks.slice(0, 20)
@@ -544,7 +551,8 @@ function runSearch() {
   const box = document.getElementById('search-results');
   if (q.length < 2) { box.innerHTML = ''; return; }
   const tc = {}, meta = {};
-  ALL_STREAMS.forEach(r => {
+  const filteredStreams = ALL_STREAMS.filter(s => matchesGenre(s.tags));
+  filteredStreams.forEach(r => {
     if (r.title.toLowerCase().includes(q) || r.artist.toLowerCase().includes(q)) {
       const k = r.artist + '|||' + r.title;
       tc[k] = (tc[k] || 0) + 1;
@@ -562,7 +570,11 @@ function runSearch() {
 function openRecapModal() {
   if (!currentData) return;
   const titles = { 0: 'За всё время', 7: 'Рекап за 7 дней', 30: 'Рекап за 4 недели', 90: 'Рекап за 3 месяца', 365: 'Итоги года' };
-  document.getElementById('recap-title').innerText = titles[currentDaysFilter] || 'Мой Рекап';
+  let titleText = titles[currentDaysFilter] || 'Мой Рекап';
+  if (currentGenreFilter.includes('k-pop')) titleText += ' (K-pop)';
+  else if (currentGenreFilter.includes('rock')) titleText += ' (Рок)';
+  
+  document.getElementById('recap-title').innerText = titleText;
   document.getElementById('recap-dates').innerText = `${currentData.first_date} — ${currentData.last_date}`;
   document.getElementById('recap-streams').innerText = currentData.total_streams.toLocaleString('ru-RU');
   document.getElementById('recap-minutes').innerText = currentData.total_minutes.toLocaleString('ru-RU');
@@ -576,7 +588,9 @@ function openRecapModal() {
 function downloadRecapImage() {
   html2canvas(document.getElementById('recap-capture'), { useCORS: true, backgroundColor: '#090c10', scale: 2 }).then(canvas => {
     const link = document.createElement('a');
-    link.download = `ytm_recap_${currentDaysFilter || 'all'}.png`;
+    let fn = `ytm_recap_${currentDaysFilter || 'all'}`;
+    if (currentGenreFilter) fn += '_genre';
+    link.download = fn + '.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
   });
