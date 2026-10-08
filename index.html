@@ -553,6 +553,7 @@ function analyzePlaylist() {
   
   box.innerHTML = ''; 
   loader.classList.remove('hidden');
+  loader.innerText = '⚙️ Подключаемся к плейлисту...';
 
   // Публичные открытые Invidious API с поддержкой CORS
   const apiInstances = [
@@ -562,23 +563,45 @@ function analyzePlaylist() {
   ];
 
   async function fetchPlaylist() {
-    let videos = null;
+    let allVideos = [];
     let title = "Плейлист";
 
     for (let url of apiInstances) {
       try {
-        const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
-        if (!resp.ok) continue;
-        const d = await resp.json();
-        if (d && d.videos && d.videos.length > 0) {
-          videos = d.videos;
-          title = d.title || title;
-          break;
+        // Запускаем цикл: тянем до 15 страниц (чтобы охватить твои 1500 треков)
+        for (let page = 1; page <= 15; page++) {
+          loader.innerText = `⚙️ Сканируем плейлист... (загружено ${allVideos.length} треков)`;
+          
+          const resp = await fetch(`${url}?page=${page}`, { headers: { 'Accept': 'application/json' } });
+          if (!resp.ok) break; // Если сервер устал, прерываем цикл страниц
+          
+          const d = await resp.json();
+          if (d && d.videos && d.videos.length > 0) {
+            allVideos = allVideos.concat(d.videos);
+            title = d.title || title;
+            // Если сервер вернул меньше 100 треков, значит это последняя страница плейлиста
+            if (d.videos.length < 100) break;
+          } else {
+            break; // Пустая страница
+          }
         }
-      } catch (err) {}
+        
+        // Если мы успешно скачали треки с этого зеркала, выходим из перебора зеркал
+        if (allVideos.length > 0) break;
+      } catch (err) {
+        allVideos = []; // Очищаем и пробуем следующее зеркало при ошибке
+      }
     }
 
-    if (!videos) throw new Error("Не удалось получить список треков через API");
+    if (!allVideos || allVideos.length === 0) throw new Error("Не удалось получить список треков через API");
+
+    // Очищаем от дубликатов (иногда API отдает одни и те же треки на стыке страниц)
+    const uniqueIds = new Set();
+    const videos = allVideos.filter(v => {
+      if (uniqueIds.has(v.videoId)) return false;
+      uniqueIds.add(v.videoId);
+      return true;
+    });
 
     const tCnt = {}, aCnt = {}, tagsCnt = {};
     let totalStr = 0;
@@ -630,11 +653,6 @@ function analyzePlaylist() {
 
   fetchPlaylist().catch(() => {
     loader.classList.add('hidden');
-    box.innerHTML = '<span class="text-red-400 text-xs">Не удалось прочитать плейлист. Убедись, что доступ к нему открыт («По ссылке» или «Общедоступный»), а не ограничен («Личный»).</span>';
+    box.innerHTML = '<span class="text-red-400 text-xs">Не удалось прочитать плейлист целиком. Убедись, что он открыт («По ссылке» или «Общедоступный»).</span>';
   });
 }
-
-loadStats(0);
-</script>
-</body>
-</html>
