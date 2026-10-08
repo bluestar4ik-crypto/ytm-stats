@@ -416,15 +416,6 @@ function loadStats(days) {
   }
 }
 
-function renderCharts(hoursData, daysData, monthlyData) {
-  const ctxH = document.getElementById('hoursChart').getContext('2d');
-  if (hoursChartInstance) hoursChartInstance.destroy();
-  hoursChartInstance = new Chart(ctxH, { type: 'bar', data: { labels: Array.from({length: 24}, (_, i) => String(i).padStart(2, '0') + ':00'), datasets: [{ data: hoursData, backgroundColor: '#1ed760', borderRadius: 4 }] }, options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9 } } }, y: { grid: { color: '#1e2533' }, ticks: { color: '#9ca3af' } } } } });
-  const ctxM = document.getElementById('monthlyChart').getContext('2d');
-  if (monthlyChartInstance) monthlyChartInstance.destroy();
-  monthlyChartInstance = new Chart(ctxM, { type: 'line', data: { labels: monthlyData.labels, datasets: [{ data: monthlyData.values, borderColor: '#1ed760', backgroundColor: 'rgba(30, 215, 96, 0.15)', fill: true, tension: 0.35 }] }, options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#9ca3af' } }, y: { grid: { color: '#1e2533' }, ticks: { color: '#9ca3af' } } } } });
-}
-
 function getArtistObj(name) {
   const filteredStreams = ALL_STREAMS.filter(s => matchesGenre(s.tags));
   const rows = filteredStreams.filter(s => s.artist === name);
@@ -516,85 +507,99 @@ function analyzePlaylist() {
   
   box.innerHTML = ''; loader.classList.remove('hidden');
 
-  fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://music.youtube.com/playlist?list=' + playlistId)}`)
-  .then(r => r.json())
-  .then(data => {
-    try {
-      const html = data.contents;
-      const match = html.match(/ytInitialData\s*=\s*(\{.*?\});/);
-      if (!match) throw new Error("Нет данных");
-      
-      const ytData = JSON.parse(match[1]);
-      const tabs = ytData.contents.twoColumnBrowseResultsRenderer.tabs;
-      const sectionList = tabs[0].tabRenderer.content.sectionListRenderer.contents;
-      
-      let contents = [];
-      for (let sec of sectionList) {
-         if (sec.musicPlaylistShelfRenderer) {
-             contents = sec.musicPlaylistShelfRenderer.contents;
-             break;
-         }
-      }
+  const targetUrl = 'https://music.youtube.com/playlist?list=' + playlistId;
+  
+  const proxies = [
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
+    `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+    `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
+  ];
 
-      if (!contents || contents.length === 0) throw new Error("Пусто");
-
-      const tCnt = {}, aCnt = {}, tagsCnt = {};
-      let totalStr = 0;
-
-      contents.forEach(item => {
-        const tr = item.musicResponsiveListItemRenderer;
-        if (!tr) return;
-        const runs = tr.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs;
-        const title = runs[0].text;
-        const artist = tr.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text;
-        
-        const myStreams = ALL_STREAMS.filter(s => s.artist === artist && s.title === title).length;
-        tCnt[title + "|||" + artist] = myStreams;
-        aCnt[artist] = (aCnt[artist] || 0) + 1;
-        totalStr += myStreams;
-
-        const myArtist = ALL_STREAMS.find(s => s.artist === artist);
-        if (myArtist && myArtist.tags) {
-          const tgs = myArtist.tags.split(', ');
-          tgs.forEach(t => { if(t) tagsCnt[t] = (tagsCnt[t] || 0) + 1; });
-        }
-      });
-
-      const topArtists = Object.keys(aCnt).sort((a,b) => aCnt[b] - aCnt[a]).slice(0, 5);
-      const topStreamed = Object.keys(tCnt).sort((a,b) => tCnt[b] - tCnt[a]).slice(0, 5);
-      const topTags = Object.keys(tagsCnt).sort((a,b) => tagsCnt[b] - tagsCnt[a]).slice(0, 4);
-
-      loader.classList.add('hidden');
-      box.innerHTML = `
-        <div class="grid grid-cols-2 gap-3 mb-4">
-          <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">Всего песен</p><p class="text-xl font-bold text-white">${contents.length}</p></div>
-          <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">Стримов от тебя</p><p class="text-xl font-bold accent">${totalStr}</p></div>
-        </div>
-        <div class="mb-4">
-          <p class="text-[10px] uppercase font-bold text-gray-400 mb-2">🎭 ДНК Плейлиста (Жанры)</p>
-          <div class="flex flex-wrap gap-1.5">
-            ${topTags.map(t => `<span class="px-2 py-1 bg-[#1ed760]/20 text-[#1ed760] text-xs font-bold rounded-lg">${t}</span>`).join('')}
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <p class="text-[10px] uppercase font-bold text-gray-400 mb-2">👑 Артисты плейлиста</p>
-            <div class="space-y-1.5">${topArtists.map(a => `<div class="bg-white/[0.03] px-2 py-1.5 rounded text-xs flex justify-between"><span class="truncate">${a}</span><span class="text-gray-500">${aCnt[a]} треков</span></div>`).join('')}</div>
-          </div>
-          <div>
-            <p class="text-[10px] uppercase font-bold text-gray-400 mb-2">🔥 Твои фавориты здесь</p>
-            <div class="space-y-1.5">${topStreamed.map(t => `<div class="bg-white/[0.03] px-2 py-1.5 rounded text-xs flex justify-between"><span class="truncate">${t.split('|||')[0]}</span><span class="accent font-bold">${tCnt[t]}x</span></div>`).join('')}</div>
-          </div>
-        </div>
-      `;
-    } catch (e) {
-      loader.classList.add('hidden');
-      box.innerHTML = '<span class="text-red-400 text-xs">Плейлист не найден. Убедись, что он открытый!</span>';
+  async function tryFetch() {
+    let html = '';
+    for (let proxy of proxies) {
+      try {
+        const r = await fetch(proxy);
+        if (!r.ok) continue;
+        const text = await r.text();
+        html = proxy.includes('allorigins') ? JSON.parse(text).contents : text;
+        if (html && html.includes('ytInitialData')) break;
+      } catch (e) { console.log('Прокси не ответил, пробуем следующий...'); }
     }
-  })
-  .catch(e => {
-     loader.classList.add('hidden');
-     box.innerHTML = '<span class="text-red-400 text-xs">Ошибка соединения. Сервер не ответил.</span>';
+
+    if (!html || !html.includes('ytInitialData')) throw new Error("Fetch failed");
+    
+    const match = html.match(/ytInitialData\s*=\s*(\{.*?\});/);
+    if (!match) throw new Error("No Data");
+    
+    const ytData = JSON.parse(match[1]);
+    const tabs = ytData.contents.twoColumnBrowseResultsRenderer.tabs;
+    const sectionList = tabs[0].tabRenderer.content.sectionListRenderer.contents;
+    
+    let contents = [];
+    for (let sec of sectionList) {
+       if (sec.musicPlaylistShelfRenderer) {
+           contents = sec.musicPlaylistShelfRenderer.contents;
+           break;
+       }
+    }
+
+    if (!contents || contents.length === 0) throw new Error("Empty");
+
+    const tCnt = {}, aCnt = {}, tagsCnt = {};
+    let totalStr = 0;
+
+    contents.forEach(item => {
+      const tr = item.musicResponsiveListItemRenderer;
+      if (!tr) return;
+      const runs = tr.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs;
+      const title = runs[0].text;
+      const artist = tr.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text;
+      
+      const myStreams = ALL_STREAMS.filter(s => s.artist === artist && s.title === title).length;
+      tCnt[title + "|||" + artist] = myStreams;
+      aCnt[artist] = (aCnt[artist] || 0) + 1;
+      totalStr += myStreams;
+
+      const myArtist = ALL_STREAMS.find(s => s.artist === artist);
+      if (myArtist && myArtist.tags) {
+        const tgs = myArtist.tags.split(', ');
+        tgs.forEach(t => { if(t) tagsCnt[t] = (tagsCnt[t] || 0) + 1; });
+      }
+    });
+
+    const topArtists = Object.keys(aCnt).sort((a,b) => aCnt[b] - aCnt[a]).slice(0, 5);
+    const topStreamed = Object.keys(tCnt).sort((a,b) => tCnt[b] - tCnt[a]).slice(0, 5);
+    const topTags = Object.keys(tagsCnt).sort((a,b) => tagsCnt[b] - tagsCnt[a]).slice(0, 4);
+
+    loader.classList.add('hidden');
+    box.innerHTML = `
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">Всего песен</p><p class="text-xl font-bold text-white">${contents.length}</p></div>
+        <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">Стримов от тебя</p><p class="text-xl font-bold accent">${totalStr}</p></div>
+      </div>
+      <div class="mb-4">
+        <p class="text-[10px] uppercase font-bold text-gray-400 mb-2">🎭 ДНК Плейлиста (Жанры)</p>
+        <div class="flex flex-wrap gap-1.5">
+          ${topTags.map(t => `<span class="px-2 py-1 bg-[#1ed760]/20 text-[#1ed760] text-xs font-bold rounded-lg">${t}</span>`).join('')}
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <p class="text-[10px] uppercase font-bold text-gray-400 mb-2">👑 Артисты плейлиста</p>
+          <div class="space-y-1.5">${topArtists.map(a => `<div class="bg-white/[0.03] px-2 py-1.5 rounded text-xs flex justify-between"><span class="truncate">${a}</span><span class="text-gray-500">${aCnt[a]} треков</span></div>`).join('')}</div>
+        </div>
+        <div>
+          <p class="text-[10px] uppercase font-bold text-gray-400 mb-2">🔥 Твои фавориты здесь</p>
+          <div class="space-y-1.5">${topStreamed.map(t => `<div class="bg-white/[0.03] px-2 py-1.5 rounded text-xs flex justify-between"><span class="truncate">${t.split('|||')[0]}</span><span class="accent font-bold">${tCnt[t]}x</span></div>`).join('')}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  tryFetch().catch(e => {
+    loader.classList.add('hidden');
+    box.innerHTML = '<span class="text-red-400 text-xs">Не удалось загрузить плейлист. Возможно, он закрыт настройками приватности YouTube, или твой браузер слишком строго блокирует скрипты!</span>';
   });
 }
 
