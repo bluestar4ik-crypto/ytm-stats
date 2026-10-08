@@ -40,35 +40,23 @@
           </div>
           <p class="text-[11px] text-gray-400 truncate" id="date-range-label">Загрузка...</p>
         </div>
-        <div class="hidden lg:flex items-center gap-2.5 bg-[#12161f] border border-[#1e2533] px-3 py-1.5 rounded-xl ml-3">
-          <div class="w-2 h-2 rounded-full bg-[#1ed760] animate-ping flex-shrink-0"></div>
-          <div class="text-xs max-w-[240px]">
-            <p class="font-bold text-white truncate" id="live-title-desktop">Облачный радар активен</p>
-            <p class="text-[10px] text-gray-400 truncate" id="live-sub-desktop">Автообновление каждые 20 мин</p>
-          </div>
-        </div>
       </div>
       <div class="flex items-center gap-2 flex-shrink-0">
         <div class="hidden md:flex items-center gap-1 bg-[#12161f] p-1 rounded-xl border border-[#1e2533]">
+          <!-- Добавлена кнопка "Сегодня" (1д) -->
+          <button onclick="loadStats(1)" id="tab-d-1" class="tab-btn px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">1д</button>
           <button onclick="loadStats(7)" id="tab-d-7" class="tab-btn px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">7д</button>
           <button onclick="loadStats(30)" id="tab-d-30" class="tab-btn px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">4 нед</button>
           <button onclick="loadStats(90)" id="tab-d-90" class="tab-btn px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">3 мес</button>
           <button onclick="loadStats(365)" id="tab-d-365" class="tab-btn px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition">Год</button>
-          <button onclick="loadStats(0)" id="tab-d-0" class="tab-btn active px-3 py-1.5 rounded-lg text-xs transition">Всё время</button>
+          <button onclick="loadStats(0)" id="tab-d-0" class="tab-btn active px-3 py-1.5 rounded-lg text-xs transition">Всё</button>
         </div>
         <button onclick="openRecapModal()" class="bg-accent hover:opacity-90 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition shadow-lg shadow-green-500/20">📸 Рекап</button>
       </div>
     </div>
 
-    <div class="flex lg:hidden items-center justify-between bg-[#12161f] border border-[#1e2533] px-3 py-1.5 rounded-xl text-xs">
-      <div class="flex items-center gap-2 min-w-0 pr-2">
-        <div class="w-2 h-2 rounded-full bg-[#1ed760] animate-ping flex-shrink-0"></div>
-        <span class="font-bold text-white truncate" id="live-title-mobile">Облачный радар активен</span>
-      </div>
-      <span class="text-[10px] text-gray-400 flex-shrink-0" id="live-sub-mobile">24/7</span>
-    </div>
-
-    <div class="grid grid-cols-5 md:hidden gap-1 bg-[#12161f] p-1 rounded-xl border border-[#1e2533] text-center">
+    <div class="grid grid-cols-6 md:hidden gap-1 bg-[#12161f] p-1 rounded-xl border border-[#1e2533] text-center">
+      <button onclick="loadStats(1)" id="tab-m-1" class="tab-btn py-1.5 rounded-lg text-[11px] text-gray-300 transition">1д</button>
       <button onclick="loadStats(7)" id="tab-m-7" class="tab-btn py-1.5 rounded-lg text-[11px] text-gray-300 transition">7д</button>
       <button onclick="loadStats(30)" id="tab-m-30" class="tab-btn py-1.5 rounded-lg text-[11px] text-gray-300 transition">4 нед</button>
       <button onclick="loadStats(90)" id="tab-m-90" class="tab-btn py-1.5 rounded-lg text-[11px] text-gray-300 transition">3 мес</button>
@@ -81,7 +69,7 @@
       <button onclick="setGenreFilter('k-pop|korean')" id="g-kpop" class="genre-btn px-3 py-1.5 rounded-full text-xs whitespace-nowrap">🌸 K-pop</button>
       <button onclick="setGenreFilter('russian')" id="g-ru" class="genre-btn px-3 py-1.5 rounded-full text-xs whitespace-nowrap">🪆 Русское</button>
       <button onclick="setGenreFilter('ukrainian')" id="g-ua" class="genre-btn px-3 py-1.5 rounded-full text-xs whitespace-nowrap">🇺🇦 Украинское</button>
-      <button onclick="setGenreFilter('rock|metal|punk|alternative')" id="g-rock" class="genre-btn px-3 py-1.5 rounded-full text-xs whitespace-nowrap">🎸 Рок & Метал</button>
+      <button onclick="setGenreFilter('rock|metal|punk|alternative')" id="g-rock" class="genre-btn px-3 py-1.5 rounded-full text-xs whitespace-nowrap">🎸 Рок & Альтернатива</button>
       <button onclick="setGenreFilter('pop|indie')" id="g-pop" class="genre-btn px-3 py-1.5 rounded-full text-xs whitespace-nowrap">🎧 Поп & Инди</button>
     </div>
 
@@ -120,11 +108,6 @@
       <div class="card p-4 md:p-5"><div class="flex items-center justify-between mb-3"><h2 class="text-sm md:text-base font-bold">👑 Топ артистов</h2><span class="text-[11px] text-gray-400">Нажми для досье</span></div><div id="top-artists-list" class="space-y-2 max-h-[480px] overflow-y-auto pr-1"></div></div>
       <div class="card p-4 md:p-5"><div class="flex items-center justify-between mb-3"><h2 class="text-sm md:text-base font-bold">🔥 Топ треков</h2><span class="text-[11px] text-gray-400">Кликни ▶ для запуска</span></div><div id="top-tracks-list" class="space-y-2 max-h-[480px] overflow-y-auto pr-1"></div></div>
     </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <div class="card p-4 md:p-5"><h2 class="text-sm md:text-base font-bold mb-3">🕒 Музыкальные биоритмы (по часам)</h2><canvas id="hoursChart" height="190"></canvas></div>
-      <div class="card p-4 md:p-5"><h2 class="text-sm md:text-base font-bold mb-3">📅 Любимые дни недели</h2><canvas id="daysChart" height="190"></canvas></div>
-    </div>
   </div>
 
   <div id="sec-eras" class="hidden space-y-5">
@@ -142,7 +125,6 @@
     </div>
   </div>
 
-  <!-- Новая вкладка: Анализ Плейлиста -->
   <div id="sec-playlists" class="hidden space-y-5">
     <div class="card p-4 md:p-5">
       <h2 class="text-base md:text-lg font-bold mb-2">💿 Интеллектуальный анализ твоего плейлиста</h2>
@@ -208,10 +190,7 @@ const ALL_STREAMS = RAW.streams.map(r => ({
   ts: r[4], dur: r[5], tags: (r[6] || '').toLowerCase(), dt: new Date(r[4] * 1000)
 }));
 
-let currentData = null;
-let currentDaysFilter = 0;
-let currentGenreFilter = '';
-let hoursChartInstance = null, daysChartInstance = null, monthlyChartInstance = null;
+let currentData = null, currentDaysFilter = 0, currentGenreFilter = '';
 
 function fmtDate(d) { return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear(); }
 function fmtDateTime(d) { return fmtDate(d) + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
@@ -219,14 +198,12 @@ function fmtDateTime(d) { return fmtDate(d) + ' ' + String(d.getHours()).padStar
 function switchSection(sec) {
   ['overview', 'eras', 'battle', 'playlists', 'gems'].forEach(s => {
     document.getElementById('sec-' + s).classList.add('hidden');
-    const nd = document.getElementById('nav-d-' + s);
-    const nm = document.getElementById('nav-m-' + s);
+    const nd = document.getElementById('nav-d-' + s), nm = document.getElementById('nav-m-' + s);
     if (nd) nd.classList.remove('active');
     if (nm) nm.classList.remove('active');
   });
   document.getElementById('sec-' + sec).classList.remove('hidden');
-  const ad = document.getElementById('nav-d-' + sec);
-  const am = document.getElementById('nav-m-' + sec);
+  const ad = document.getElementById('nav-d-' + sec), am = document.getElementById('nav-m-' + sec);
   if (ad) ad.classList.add('active');
   if (am) am.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -234,7 +211,7 @@ function switchSection(sec) {
 }
 
 function setGenreFilter(genreStr) {
-  currentGenreFilter = genreStr;
+  currentGenreFilter = genreStr.toLowerCase();
   document.querySelectorAll('.genre-btn').forEach(b => b.classList.remove('active'));
   let btnId = 'g-all';
   if (genreStr.includes('k-pop')) btnId = 'g-kpop';
@@ -263,7 +240,6 @@ function computeClientStats(days) {
 
   let mv = 0, totalSec = 0;
   const aCnt = {}, aSec = {}, aVid = {}, aSongs = {}, tCnt = {}, tMeta = {}, tLast = {};
-  const hours = Array(24).fill(0), weekdays = Array(7).fill(0);
   const dayCounts = {}, daySet = new Set();
   const mStreams = {}, mArtists = {}, mTracks = {}, mVid = {};
 
@@ -281,8 +257,6 @@ function computeClientStats(days) {
     tMeta[tk] = r;
     tLast[tk] = r.ts;
 
-    hours[r.dt.getHours()]++;
-    weekdays[(r.dt.getDay() + 6) % 7]++;
     const ds = fmtDate(r.dt);
     dayCounts[ds] = (dayCounts[ds] || 0) + 1;
     daySet.add(new Date(r.dt.getFullYear(), r.dt.getMonth(), r.dt.getDate()).getTime());
@@ -313,9 +287,7 @@ function computeClientStats(days) {
     return { month: mk, top_artist: topA, top_track: topT, total_streams: mStreams[mk], sample_vid: mVid[mk + '_' + topA] || aVid[topA] };
   });
 
-  const mKeys = Object.keys(mStreams).sort();
   const bestDay = Object.keys(dayCounts).sort((a,b) => dayCounts[b] - dayCounts[a])[0];
-  const peakH = hours.indexOf(Math.max(...hours));
 
   return {
     total_streams: rows.length, ytm_streams: rows.length - mv, mv_streams: mv,
@@ -323,13 +295,10 @@ function computeClientStats(days) {
     repeat_index: (rows.length / Math.max(1, Object.keys(tCnt).length)).toFixed(1),
     max_streak: maxStreak, active_days: sortedDays.length,
     first_date: fmtDate(rows[0].dt), last_date: fmtDate(rows[rows.length - 1].dt),
-    top_artists: topArtists, top_tracks: topTracks, hours, weekdays,
-    monthly_chart: { labels: mKeys, values: mKeys.map(k => mStreams[k]) },
-    recent: rows.slice(-18).reverse(), eras,
+    top_artists: topArtists, top_tracks: topTracks, eras,
     achievements: [
       { icon: '👑', title: 'Одержимость жанром', value: topArtists[0]?.artist || '-', sub: `${topArtists[0]?.count || 0} стримов` },
-      { icon: '🔥', title: 'Рекордный день', value: bestDay || '-', sub: `${dayCounts[bestDay] || 0} треков за сутки` },
-      { icon: '🕒', title: 'Пиковый биоритм', value: `с ${String(peakH).padStart(2,'0')}:00 до ${String(peakH).padStart(2,'0')}:59`, sub: `Любимый час (${hours[peakH]} стр.)` }
+      { icon: '🔥', title: 'Рекордный день', value: bestDay || '-', sub: `${dayCounts[bestDay] || 0} треков за сутки` }
     ]
   };
 }
@@ -344,14 +313,6 @@ function loadStats(days) {
   const data = computeClientStats(days);
   if (!data) return;
   currentData = data;
-
-  if (RAW.now_playing) {
-    const npText = `${RAW.now_playing.artist} — ${RAW.now_playing.title}`;
-    document.getElementById('live-title-desktop').innerText = npText;
-    document.getElementById('live-sub-desktop').innerText = `Обновлено: ${RAW.updated_at}`;
-    document.getElementById('live-title-mobile').innerText = npText;
-    document.getElementById('live-sub-mobile').innerText = RAW.updated_at.split(' ')[1] || RAW.updated_at;
-  }
 
   document.getElementById('date-range-label').innerText = `${data.first_date} — ${data.last_date}`;
   document.getElementById('stat-streams').innerText = data.total_streams.toLocaleString('ru-RU');
@@ -385,9 +346,6 @@ function loadStats(days) {
     </div>
   `).join('');
 
-  renderCharts(data.hours, data.weekdays, data.monthly_chart);
-
-  // Исправленная верстка Музыкальных Эр (карточки не плющит)
   document.getElementById('eras-grid').innerHTML = data.eras.map(e => `
     <div class="card overflow-hidden flex flex-col relative group">
       <div class="h-32 w-full bg-gray-900 relative">
@@ -413,15 +371,6 @@ function loadStats(days) {
       s2.add(new Option(a.artist, a.artist, idx === 1, idx === 1));
     });
   }
-}
-
-function renderCharts(hoursData, daysData, monthlyData) {
-  const ctxH = document.getElementById('hoursChart').getContext('2d');
-  if (hoursChartInstance) hoursChartInstance.destroy();
-  hoursChartInstance = new Chart(ctxH, { type: 'bar', data: { labels: Array.from({length: 24}, (_, i) => String(i).padStart(2, '0') + ':00'), datasets: [{ data: hoursData, backgroundColor: '#1ed760', borderRadius: 4 }] }, options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9 } } }, y: { grid: { color: '#1e2533' }, ticks: { color: '#9ca3af' } } } } });
-  const ctxM = document.getElementById('monthlyChart').getContext('2d');
-  if (monthlyChartInstance) monthlyChartInstance.destroy();
-  monthlyChartInstance = new Chart(ctxM, { type: 'line', data: { labels: monthlyData.labels, datasets: [{ data: monthlyData.values, borderColor: '#1ed760', backgroundColor: 'rgba(30, 215, 96, 0.15)', fill: true, tension: 0.35 }] }, options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#9ca3af' } }, y: { grid: { color: '#1e2533' }, ticks: { color: '#9ca3af' } } } } });
 }
 
 function getArtistObj(name) {
@@ -504,7 +453,6 @@ function downloadRecapImage() {
   });
 }
 
-// === ЛОГИКА АНАЛИЗА ПЛЕЙЛИСТА ===
 function analyzePlaylist() {
   const input = document.getElementById('playlist-input').value.trim();
   const box = document.getElementById('playlist-results');
@@ -516,7 +464,7 @@ function analyzePlaylist() {
   
   box.innerHTML = ''; loader.classList.remove('hidden');
 
-  fetch('https://music.youtube.com/youtubei/v1/browse?prettyPrint=false', {
+  fetch('https://corsproxy.io/?https://music.youtube.com/youtubei/v1/browse?prettyPrint=false', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -537,13 +485,11 @@ function analyzePlaylist() {
         const title = runs[0].text;
         const artist = tr.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text;
         
-        // Ищем эту песню в твоей истории ALL_STREAMS
         const myStreams = ALL_STREAMS.filter(s => s.artist === artist && s.title === title).length;
         tCnt[title + "|||" + artist] = myStreams;
         aCnt[artist] = (aCnt[artist] || 0) + 1;
         totalStr += myStreams;
 
-        // Ищем теги артиста
         const myArtist = ALL_STREAMS.find(s => s.artist === artist);
         if (myArtist && myArtist.tags) {
           const tgs = myArtist.tags.split(', ');
@@ -578,7 +524,7 @@ function analyzePlaylist() {
         </div>
       `;
     } catch (e) {
-      box.innerHTML = '<span class="text-red-400 text-xs">Плейлист не найден. Убедись, что он "Открытый" или "Доступен по ссылке".</span>';
+      box.innerHTML = '<span class="text-red-400 text-xs">Не удалось прочитать плейлист.</span>';
     }
   });
 }
