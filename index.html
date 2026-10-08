@@ -464,17 +464,30 @@ function analyzePlaylist() {
   
   box.innerHTML = ''; loader.classList.remove('hidden');
 
-  fetch('https://corsproxy.io/?https://music.youtube.com/youtubei/v1/browse?prettyPrint=false', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      context: { client: { clientName: "WEB_REMIX", clientVersion: "1.20231018.00.00" } },
-      browseId: "VL" + playlistId
-    })
-  }).then(r => r.json()).then(data => {
-    loader.classList.add('hidden');
+  // Используем надежный AllOrigins (он не падает, в отличие от прошлого)
+  fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://music.youtube.com/playlist?list=' + playlistId)}`)
+  .then(r => r.json())
+  .then(data => {
     try {
-      const contents = data.contents.twoColumnBrowseResultsRenderer.secondaryContents.sectionListRenderer.contents[0].musicPlaylistShelfRenderer.contents;
+      const html = data.contents;
+      // Вытаскиваем скрытые данные из кода страницы
+      const match = html.match(/ytInitialData\s*=\s*(\{.*?\});/);
+      if (!match) throw new Error("Нет данных");
+      
+      const ytData = JSON.parse(match[1]);
+      const tabs = ytData.contents.twoColumnBrowseResultsRenderer.tabs;
+      const sectionList = tabs[0].tabRenderer.content.sectionListRenderer.contents;
+      
+      let contents = [];
+      for (let sec of sectionList) {
+         if (sec.musicPlaylistShelfRenderer) {
+             contents = sec.musicPlaylistShelfRenderer.contents;
+             break;
+         }
+      }
+
+      if (!contents || contents.length === 0) throw new Error("Пусто");
+
       const tCnt = {}, aCnt = {}, tagsCnt = {};
       let totalStr = 0;
 
@@ -485,6 +498,7 @@ function analyzePlaylist() {
         const title = runs[0].text;
         const artist = tr.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text;
         
+        // Сверяем с твоей историей прослушиваний
         const myStreams = ALL_STREAMS.filter(s => s.artist === artist && s.title === title).length;
         tCnt[title + "|||" + artist] = myStreams;
         aCnt[artist] = (aCnt[artist] || 0) + 1;
@@ -501,6 +515,7 @@ function analyzePlaylist() {
       const topStreamed = Object.keys(tCnt).sort((a,b) => tCnt[b] - tCnt[a]).slice(0, 5);
       const topTags = Object.keys(tagsCnt).sort((a,b) => tagsCnt[b] - tagsCnt[a]).slice(0, 4);
 
+      loader.classList.add('hidden');
       box.innerHTML = `
         <div class="grid grid-cols-2 gap-3 mb-4">
           <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">Всего песен</p><p class="text-xl font-bold text-white">${contents.length}</p></div>
@@ -524,12 +539,12 @@ function analyzePlaylist() {
         </div>
       `;
     } catch (e) {
-      box.innerHTML = '<span class="text-red-400 text-xs">Не удалось прочитать плейлист.</span>';
+      loader.classList.add('hidden');
+      box.innerHTML = '<span class="text-red-400 text-xs">Плейлист не найден. Убедись, что он открытый!</span>';
     }
+  })
+  .catch(e => {
+     loader.classList.add('hidden');
+     box.innerHTML = '<span class="text-red-400 text-xs">Ошибка соединения. Сервер не ответил.</span>';
   });
 }
-
-loadStats(0);
-</script>
-</body>
-</html>
