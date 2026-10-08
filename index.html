@@ -146,13 +146,13 @@
 
   <div id="sec-playlists" class="hidden space-y-5">
     <div class="card p-4 md:p-5">
-      <h2 class="text-base md:text-lg font-bold mb-2">💿 Интеллектуальный анализ твоего плейлиста</h2>
-      <p class="text-xs text-gray-400 mb-4">Вставь ссылку на любой открытый плейлист (например, свой основной), и я разберу его по жанрам, настроениям и частоте твоих прослушиваний.</p>
+      <h2 class="text-base md:text-lg font-bold mb-2">💿 Интеллектуальный анализ плейлиста</h2>
+      <p class="text-xs text-gray-400 mb-4">Вставь ссылку на открытый плейлист YouTube/YouTube Music. Скрипт разберет его структуру и сопоставит с твоей историей прослушиваний.</p>
       <div class="flex gap-2 mb-2">
         <input type="text" id="playlist-input" placeholder="https://music.youtube.com/playlist?list=PLU40GlB6g9HY" class="w-full bg-[#090c10] border border-[#1e2533] focus:border-[#1ed760] outline-none rounded-xl px-4 py-2.5 text-sm text-white">
         <button onclick="analyzePlaylist()" class="bg-accent hover:opacity-90 px-4 py-2.5 rounded-xl text-xs font-bold text-black whitespace-nowrap">Анализ</button>
       </div>
-      <div id="playlist-loading" class="text-xs text-emerald-400 font-bold hidden my-3">⚙️ Сканируем плейлист...</div>
+      <div id="playlist-loading" class="text-xs text-emerald-400 font-bold hidden my-3">⚙️ Сканируем треки плейлиста...</div>
       <div id="playlist-results" class="mt-5 space-y-5"></div>
     </div>
   </div>
@@ -210,7 +210,7 @@ const ALL_STREAMS = RAW.streams.map(r => ({
 }));
 
 let currentData = null, currentDaysFilter = 0, currentGenreFilter = '';
-let hoursChartInstance = null, daysChartInstance = null, monthlyChartInstance = null;
+let hoursChartInstance = null, daysChartInstance = null;
 
 function fmtDate(d) { return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear(); }
 function fmtDateTime(d) { return fmtDate(d) + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
@@ -256,7 +256,6 @@ function computeClientStats(days) {
   
   const nowTs = Math.floor(Date.now() / 1000);
   const maxTs = filteredStreams[filteredStreams.length - 1].ts;
-  
   const cutoff = days === 1 ? (nowTs - 86400) : (days > 0 ? maxTs - (days * 86400) : 0);
   const rows = filteredStreams.filter(s => s.ts >= cutoff);
   if (!rows.length) return null;
@@ -265,7 +264,6 @@ function computeClientStats(days) {
   const aCnt = {}, aSec = {}, aVid = {}, aSongs = {}, tCnt = {}, tMeta = {}, tLast = {};
   const dayCounts = {}, daySet = new Set();
   const mStreams = {}, mArtists = {}, mTracks = {}, mVid = {};
-  
   const hours = Array(24).fill(0);
   const weekdays = Array(7).fill(0);
 
@@ -316,7 +314,6 @@ function computeClientStats(days) {
     return { month: mk, top_artist: topA, top_track: topT, total_streams: mStreams[mk], sample_vid: mVid[mk + '_' + topA] || aVid[topA] };
   });
 
-  const mKeys = Object.keys(mStreams).sort();
   const bestDay = Object.keys(dayCounts).sort((a,b) => dayCounts[b] - dayCounts[a])[0];
   const peakH = hours.indexOf(Math.max(...hours));
 
@@ -327,7 +324,7 @@ function computeClientStats(days) {
     max_streak: maxStreak, active_days: sortedDays.length,
     first_date: fmtDate(rows[0].dt), last_date: fmtDate(rows[rows.length - 1].dt),
     top_artists: topArtists, top_tracks: topTracks, eras,
-    hours: hours, weekdays: weekdays, monthly_chart: { labels: mKeys, values: mKeys.map(k => mStreams[k]) },
+    hours: hours, weekdays: weekdays,
     achievements: [
       { icon: '👑', title: 'Одержимость жанром', value: topArtists[0]?.artist || '-', sub: `${topArtists[0]?.count || 0} стримов` },
       { icon: '🔥', title: 'Рекордный день', value: bestDay || '-', sub: `${dayCounts[bestDay] || 0} треков за сутки` },
@@ -405,13 +402,56 @@ function loadStats(days) {
     </div>
   `).join('');
 
-  renderCharts(data.hours, data.weekdays, data.monthly_chart);
+  renderCharts(data.hours, data.weekdays);
 
   const s1 = document.getElementById('battle-a1'), s2 = document.getElementById('battle-a2');
-  if (!s1.options.length) {
-    data.top_artists.slice(0, 25).forEach((a, idx) => {
+  if (s1 && s2 && s1.options.length === 0) {
+    data.top_artists.slice(0, 30).forEach((a, idx) => {
       s1.add(new Option(a.artist, a.artist, idx === 0, idx === 0));
       s2.add(new Option(a.artist, a.artist, idx === 1, idx === 1));
+    });
+  }
+}
+
+function renderCharts(hoursData, weekdaysData) {
+  const elH = document.getElementById('hoursChart');
+  if (elH) {
+    const ctxH = elH.getContext('2d');
+    if (hoursChartInstance) hoursChartInstance.destroy();
+    hoursChartInstance = new Chart(ctxH, {
+      type: 'bar',
+      data: {
+        labels: Array.from({length: 24}, (_, i) => String(i).padStart(2, '0') + ':00'),
+        datasets: [{ data: hoursData, backgroundColor: '#1ed760', borderRadius: 4 }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9 } } },
+          y: { grid: { color: '#1e2533' }, ticks: { color: '#9ca3af' } }
+        }
+      }
+    });
+  }
+
+  const elD = document.getElementById('daysChart');
+  if (elD) {
+    const ctxD = elD.getContext('2d');
+    if (daysChartInstance) daysChartInstance.destroy();
+    const daysLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    daysChartInstance = new Chart(ctxD, {
+      type: 'bar',
+      data: {
+        labels: daysLabels,
+        datasets: [{ data: weekdaysData, backgroundColor: '#10b981', borderRadius: 4 }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+          y: { grid: { color: '#1e2533' }, ticks: { color: '#9ca3af' } }
+        }
+      }
     });
   }
 }
@@ -453,7 +493,10 @@ function showArtistDetails(name) {
 }
 
 function runBattle() {
-  const r1 = getArtistObj(document.getElementById('battle-a1').value), r2 = getArtistObj(document.getElementById('battle-a2').value);
+  const s1 = document.getElementById('battle-a1');
+  const s2 = document.getElementById('battle-a2');
+  if (!s1 || !s2 || !s1.value || !s2.value) return;
+  const r1 = getArtistObj(s1.value), r2 = getArtistObj(s2.value);
   if (!r1 || !r2) return;
   const metrics = [
     { label: 'Всего стримов', v1: r1.total_streams, v2: r2.total_streams, suffix: '' },
@@ -503,65 +546,53 @@ function analyzePlaylist() {
   if (!input) return;
   
   let playlistId = input;
-  if (input.includes('list=')) playlistId = new URL(input).searchParams.get('list');
+  if (input.includes('list=')) {
+    const m = input.match(/[?&]list=([^&#]+)/);
+    if (m) playlistId = m[1];
+  }
   
-  box.innerHTML = ''; loader.classList.remove('hidden');
+  box.innerHTML = ''; 
+  loader.classList.remove('hidden');
 
-  const targetUrl = 'https://music.youtube.com/playlist?list=' + playlistId;
-  
-  const proxies = [
-    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
-    `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-    `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
+  // Публичные открытые Invidious API с поддержкой CORS
+  const apiInstances = [
+    `https://inv.nadeko.net/api/v1/playlists/${playlistId}`,
+    `https://invidious.nerdvpn.de/api/v1/playlists/${playlistId}`,
+    `https://invidious.jing.rocks/api/v1/playlists/${playlistId}`
   ];
 
-  async function tryFetch() {
-    let html = '';
-    for (let proxy of proxies) {
+  async function fetchPlaylist() {
+    let videos = null;
+    let title = "Плейлист";
+
+    for (let url of apiInstances) {
       try {
-        const r = await fetch(proxy);
-        if (!r.ok) continue;
-        const text = await r.text();
-        html = proxy.includes('allorigins') ? JSON.parse(text).contents : text;
-        if (html && html.includes('ytInitialData')) break;
-      } catch (e) { console.log('Прокси не ответил, пробуем следующий...'); }
+        const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (!resp.ok) continue;
+        const d = await resp.json();
+        if (d && d.videos && d.videos.length > 0) {
+          videos = d.videos;
+          title = d.title || title;
+          break;
+        }
+      } catch (err) {}
     }
 
-    if (!html || !html.includes('ytInitialData')) throw new Error("Fetch failed");
-    
-    const match = html.match(/ytInitialData\s*=\s*(\{.*?\});/);
-    if (!match) throw new Error("No Data");
-    
-    const ytData = JSON.parse(match[1]);
-    const tabs = ytData.contents.twoColumnBrowseResultsRenderer.tabs;
-    const sectionList = tabs[0].tabRenderer.content.sectionListRenderer.contents;
-    
-    let contents = [];
-    for (let sec of sectionList) {
-       if (sec.musicPlaylistShelfRenderer) {
-           contents = sec.musicPlaylistShelfRenderer.contents;
-           break;
-       }
-    }
-
-    if (!contents || contents.length === 0) throw new Error("Empty");
+    if (!videos) throw new Error("Не удалось получить список треков через API");
 
     const tCnt = {}, aCnt = {}, tagsCnt = {};
     let totalStr = 0;
 
-    contents.forEach(item => {
-      const tr = item.musicResponsiveListItemRenderer;
-      if (!tr) return;
-      const runs = tr.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs;
-      const title = runs[0].text;
-      const artist = tr.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text;
+    videos.forEach(item => {
+      const trackTitle = item.title;
+      const trackArtist = item.author;
       
-      const myStreams = ALL_STREAMS.filter(s => s.artist === artist && s.title === title).length;
-      tCnt[title + "|||" + artist] = myStreams;
-      aCnt[artist] = (aCnt[artist] || 0) + 1;
+      const myStreams = ALL_STREAMS.filter(s => s.artist === trackArtist && s.title === trackTitle).length;
+      tCnt[trackTitle + "|||" + trackArtist] = myStreams;
+      aCnt[trackArtist] = (aCnt[trackArtist] || 0) + 1;
       totalStr += myStreams;
 
-      const myArtist = ALL_STREAMS.find(s => s.artist === artist);
+      const myArtist = ALL_STREAMS.find(s => s.artist === trackArtist);
       if (myArtist && myArtist.tags) {
         const tgs = myArtist.tags.split(', ');
         tgs.forEach(t => { if(t) tagsCnt[t] = (tagsCnt[t] || 0) + 1; });
@@ -575,31 +606,31 @@ function analyzePlaylist() {
     loader.classList.add('hidden');
     box.innerHTML = `
       <div class="grid grid-cols-2 gap-3 mb-4">
-        <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">Всего песен</p><p class="text-xl font-bold text-white">${contents.length}</p></div>
-        <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">Стримов от тебя</p><p class="text-xl font-bold accent">${totalStr}</p></div>
+        <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">Всего треков</p><p class="text-xl font-bold text-white">${videos.length}</p></div>
+        <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-gray-400 uppercase">Твоих прослушиваний</p><p class="text-xl font-bold accent">${totalStr}</p></div>
       </div>
       <div class="mb-4">
         <p class="text-[10px] uppercase font-bold text-gray-400 mb-2">🎭 ДНК Плейлиста (Жанры)</p>
         <div class="flex flex-wrap gap-1.5">
-          ${topTags.map(t => `<span class="px-2 py-1 bg-[#1ed760]/20 text-[#1ed760] text-xs font-bold rounded-lg">${t}</span>`).join('')}
+          ${topTags.length > 0 ? topTags.map(t => `<span class="px-2 py-1 bg-[#1ed760]/20 text-[#1ed760] text-xs font-bold rounded-lg">${t}</span>`).join('') : '<span class="text-gray-500 text-xs">Жанры еще определяются</span>'}
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <p class="text-[10px] uppercase font-bold text-gray-400 mb-2">👑 Артисты плейлиста</p>
-          <div class="space-y-1.5">${topArtists.map(a => `<div class="bg-white/[0.03] px-2 py-1.5 rounded text-xs flex justify-between"><span class="truncate">${a}</span><span class="text-gray-500">${aCnt[a]} треков</span></div>`).join('')}</div>
+          <p class="text-[10px] uppercase font-bold text-gray-400 mb-2">👑 Основные исполнители</p>
+          <div class="space-y-1.5">${topArtists.map(a => `<div class="bg-white/[0.03] px-2 py-1.5 rounded text-xs flex justify-between"><span class="truncate pr-1">${a}</span><span class="text-gray-500 flex-shrink-0">${aCnt[a]} шт.</span></div>`).join('')}</div>
         </div>
         <div>
           <p class="text-[10px] uppercase font-bold text-gray-400 mb-2">🔥 Твои фавориты здесь</p>
-          <div class="space-y-1.5">${topStreamed.map(t => `<div class="bg-white/[0.03] px-2 py-1.5 rounded text-xs flex justify-between"><span class="truncate">${t.split('|||')[0]}</span><span class="accent font-bold">${tCnt[t]}x</span></div>`).join('')}</div>
+          <div class="space-y-1.5">${topStreamed.map(t => `<div class="bg-white/[0.03] px-2 py-1.5 rounded text-xs flex justify-between"><span class="truncate pr-1">${t.split('|||')[0]}</span><span class="accent font-bold flex-shrink-0">${tCnt[t]}x</span></div>`).join('')}</div>
         </div>
       </div>
     `;
   }
 
-  tryFetch().catch(e => {
+  fetchPlaylist().catch(() => {
     loader.classList.add('hidden');
-    box.innerHTML = '<span class="text-red-400 text-xs">Не удалось загрузить плейлист. Возможно, он закрыт настройками приватности YouTube, или твой браузер слишком строго блокирует скрипты!</span>';
+    box.innerHTML = '<span class="text-red-400 text-xs">Не удалось прочитать плейлист. Убедись, что доступ к нему открыт («По ссылке» или «Общедоступный»), а не ограничен («Личный»).</span>';
   });
 }
 
