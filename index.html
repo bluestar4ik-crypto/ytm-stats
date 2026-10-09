@@ -206,7 +206,7 @@ const RAW = window.YTM_CLOUD_DATA || { updated_at: "-", now_playing: null, strea
 const ALL_STREAMS = RAW.streams.map(r => ({
   video_id: r[0], title: r[1], artist: r[2],
   source: r[3] === 1 ? 'MV (YouTube)' : (r[3] === 2 ? 'Live Radar' : 'YouTube Music'),
-  ts: r[4], dur: r[5], tags: (r[6] || '').toLowerCase(), dt: new Date(r[4] * 1000)
+  ts: r[4], dur: r[5], tags: (r[6] ? String(r[6]).toLowerCase() : ''), dt: new Date(r[4] * 1000)
 }));
 
 let currentData = null, currentDaysFilter = 0, currentGenreFilter = '';
@@ -217,12 +217,14 @@ function fmtDateTime(d) { return fmtDate(d) + ' ' + String(d.getHours()).padStar
 
 function switchSection(sec) {
   ['overview', 'eras', 'battle', 'playlists', 'gems'].forEach(s => {
-    document.getElementById('sec-' + s).classList.add('hidden');
+    const el = document.getElementById('sec-' + s);
+    if (el) el.classList.add('hidden');
     const nd = document.getElementById('nav-d-' + s), nm = document.getElementById('nav-m-' + s);
     if (nd) nd.classList.remove('active');
     if (nm) nm.classList.remove('active');
   });
-  document.getElementById('sec-' + sec).classList.remove('hidden');
+  const secEl = document.getElementById('sec-' + sec);
+  if (secEl) secEl.classList.remove('hidden');
   const ad = document.getElementById('nav-d-' + sec), am = document.getElementById('nav-m-' + sec);
   if (ad) ad.classList.add('active');
   if (am) am.classList.add('active');
@@ -239,14 +241,17 @@ function setGenreFilter(genreStr) {
   else if (genreStr.includes('ukrainian')) btnId = 'g-ua';
   else if (genreStr.includes('russian')) btnId = 'g-ru';
   else if (genreStr.includes('pop')) btnId = 'g-pop';
-  document.getElementById(btnId).classList.add('active');
+  
+  const activeBtn = document.getElementById(btnId);
+  if (activeBtn) activeBtn.classList.add('active');
+  
   loadStats(currentDaysFilter);
 }
 
 function matchesGenre(itemTags) {
   if (!currentGenreFilter) return true;
   const targetTags = currentGenreFilter.split('|');
-  for (let t of targetTags) { if (itemTags.includes(t)) return true; }
+  for (let t of targetTags) { if (itemTags && itemTags.includes(t)) return true; }
   return false;
 }
 
@@ -326,90 +331,113 @@ function computeClientStats(days) {
     top_artists: topArtists, top_tracks: topTracks, eras,
     hours: hours, weekdays: weekdays,
     achievements: [
-      { icon: '👑', title: 'Одержимость жанром', value: topArtists[0]?.artist || '-', sub: `${topArtists[0]?.count || 0} стримов` },
-      { icon: '🔥', title: 'Рекордный день', value: bestDay || '-', sub: `${dayCounts[bestDay] || 0} треков за сутки` },
+      { icon: '👑', title: 'Одержимость жанром', value: topArtists[0] ? topArtists[0].artist : '-', sub: `${topArtists[0] ? topArtists[0].count : 0} стримов` },
+      { icon: '🔥', title: 'Рекордный день', value: bestDay || '-', sub: `${bestDay ? dayCounts[bestDay] : 0} треков за сутки` },
       { icon: '🕒', title: 'Пиковый биоритм', value: `с ${String(peakH).padStart(2,'0')}:00 до ${String(peakH).padStart(2,'0')}:59`, sub: `Любимый час (${hours[peakH]} стр.)` }
     ]
   };
 }
 
 function loadStats(days) {
-  currentDaysFilter = days;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  const bd = document.getElementById('tab-d-' + days), bm = document.getElementById('tab-m-' + days);
-  if (bd) bd.classList.add('active');
-  if (bm) bm.classList.add('active');
+  try {
+    currentDaysFilter = days;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    const bd = document.getElementById('tab-d-' + days), bm = document.getElementById('tab-m-' + days);
+    if (bd) bd.classList.add('active');
+    if (bm) bm.classList.add('active');
 
-  const data = computeClientStats(days);
-  if (!data) return;
-  currentData = data;
+    const data = computeClientStats(days);
+    if (!data) return;
+    currentData = data;
 
-  if (RAW.now_playing) {
-    const npText = `${RAW.now_playing.artist} — ${RAW.now_playing.title}`;
-    document.getElementById('live-title-desktop').innerText = npText;
-    document.getElementById('live-sub-desktop').innerText = `Обновлено: ${RAW.updated_at}`;
-    document.getElementById('live-title-mobile').innerText = npText;
-    document.getElementById('live-sub-mobile').innerText = RAW.updated_at.split(' ')[1] || RAW.updated_at;
-  }
+    if (RAW.now_playing) {
+      const npText = `${RAW.now_playing.artist} — ${RAW.now_playing.title}`;
+      const titleD = document.getElementById('live-title-desktop');
+      const subD = document.getElementById('live-sub-desktop');
+      const titleM = document.getElementById('live-title-mobile');
+      const subM = document.getElementById('live-sub-mobile');
+      
+      if(titleD) titleD.innerText = npText;
+      if(subD) subD.innerText = `Обновлено: ${RAW.updated_at}`;
+      if(titleM) titleM.innerText = npText;
+      if(subM) subM.innerText = RAW.updated_at.split(' ')[1] || RAW.updated_at;
+    }
 
-  document.getElementById('date-range-label').innerText = `${data.first_date} — ${data.last_date}`;
-  document.getElementById('stat-streams').innerText = data.total_streams.toLocaleString('ru-RU');
-  document.getElementById('stat-sources').innerText = `YTM: ${data.ytm_streams} | Клипы: ${data.mv_streams}`;
-  document.getElementById('stat-minutes').innerText = data.total_minutes.toLocaleString('ru-RU');
-  document.getElementById('stat-hours').innerText = `~${Math.round(data.total_minutes / 60)} часов`;
-  document.getElementById('stat-tracks').innerText = data.unique_tracks.toLocaleString('ru-RU');
-  document.getElementById('stat-artists').innerText = data.unique_artists.toLocaleString('ru-RU');
-  document.getElementById('stat-repeat').innerText = data.repeat_index + 'x';
-  document.getElementById('stat-streak').innerText = data.max_streak + ' дн.';
-  document.getElementById('stat-active-days').innerText = `${data.active_days} активных дн.`;
+    const rangeLabel = document.getElementById('date-range-label');
+    if(rangeLabel) rangeLabel.innerText = `${data.first_date} — ${data.last_date}`;
+    
+    document.getElementById('stat-streams').innerText = data.total_streams.toLocaleString('ru-RU');
+    document.getElementById('stat-sources').innerText = `YTM: ${data.ytm_streams} | Клипы: ${data.mv_streams}`;
+    document.getElementById('stat-minutes').innerText = data.total_minutes.toLocaleString('ru-RU');
+    document.getElementById('stat-hours').innerText = `~${Math.round(data.total_minutes / 60)} часов`;
+    document.getElementById('stat-tracks').innerText = data.unique_tracks.toLocaleString('ru-RU');
+    document.getElementById('stat-artists').innerText = data.unique_artists.toLocaleString('ru-RU');
+    document.getElementById('stat-repeat').innerText = data.repeat_index + 'x';
+    document.getElementById('stat-streak').innerText = data.max_streak + ' дн.';
+    document.getElementById('stat-active-days').innerText = `${data.active_days} активных дн.`;
 
-  document.getElementById('achievements-grid').innerHTML = data.achievements.map(a => `
-    <div class="card p-3.5 md:p-4 flex items-center gap-3.5 border-l-4 border-l-[#1ed760]">
-      <div class="text-2xl">${a.icon}</div>
-      <div class="min-w-0"><p class="text-[11px] text-gray-400 font-semibold">${a.title}</p><p class="text-sm font-bold text-white truncate mt-0.5">${a.value}</p><p class="text-[11px] text-gray-500 truncate">${a.sub}</p></div>
-    </div>
-  `).join('');
-
-  document.getElementById('top-artists-list').innerHTML = data.top_artists.map((a, i) => `
-    <div onclick="showArtistDetails('${a.artist.replace(/'/g, "\\'")}')" class="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 cursor-pointer transition">
-      <div class="flex items-center gap-2.5 min-w-0"><span class="w-6 text-xs font-bold ${i < 3 ? 'accent' : 'text-gray-500'}">#${i + 1}</span><img src="https://i.ytimg.com/vi/${a.sample_vid}/mqdefault.jpg" class="w-10 h-10 rounded-full object-cover border border-gray-700 flex-shrink-0"><div class="truncate"><p class="font-bold text-xs md:text-sm text-white truncate">${a.artist}</p><p class="text-[11px] text-gray-400">~${a.minutes} мин. • ${a.unique_songs} песен</p></div></div>
-      <span class="px-2 py-1 rounded-lg bg-white/5 text-xs font-bold accent ml-2 flex-shrink-0">${a.count} стр.</span>
-    </div>
-  `).join('');
-
-  document.getElementById('top-tracks-list').innerHTML = data.top_tracks.map((t, i) => `
-    <div class="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition">
-      <div class="flex items-center gap-2.5 min-w-0"><span class="w-6 text-xs font-bold ${i < 3 ? 'accent' : 'text-gray-500'}">#${i + 1}</span><img src="https://i.ytimg.com/vi/${t.video_id}/mqdefault.jpg" class="w-10 h-10 rounded-lg object-cover border border-gray-700 flex-shrink-0"><div class="truncate"><p class="font-bold text-xs md:text-sm text-white truncate">${t.title}</p><p class="text-[11px] text-gray-400 truncate">${t.artist}</p></div></div>
-      <div class="flex items-center gap-1.5 flex-shrink-0 ml-2"><span class="px-2 py-1 rounded-lg bg-white/5 text-xs font-bold">${t.count}x</span><a href="https://music.youtube.com/watch?v=${t.video_id}" target="_blank" class="w-7 h-7 rounded-full bg-white/10 hover:bg-[#1ed760] hover:text-black flex items-center justify-center text-xs transition">▶</a></div>
-    </div>
-  `).join('');
-
-  document.getElementById('eras-grid').innerHTML = data.eras.map(e => `
-    <div class="card overflow-hidden flex flex-col relative group">
-      <div class="h-32 w-full bg-gray-900 relative">
-        <img src="https://i.ytimg.com/vi/${e.sample_vid}/mqdefault.jpg" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition duration-300">
-        <div class="absolute inset-0 bg-gradient-to-t from-[#12161f] to-transparent"></div>
-        <span class="absolute top-3 left-3 px-2 py-1 rounded bg-black/60 text-[10px] font-bold text-white tracking-widest uppercase backdrop-blur-sm border border-white/10">${e.month}</span>
-      </div>
-      <div class="p-4 -mt-6 relative z-10">
-        <p class="text-sm font-extrabold text-white truncate drop-shadow-md">Эра ${e.top_artist}</p>
-        <p class="text-[11px] text-gray-300 truncate mt-1">Хит: ${e.top_track}</p>
-        <div class="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
-          <span class="text-[10px] text-gray-500 uppercase">Стримов за месяц</span>
-          <span class="text-xs font-bold accent">${e.total_streams}</span>
+    const achGrid = document.getElementById('achievements-grid');
+    if(achGrid) {
+      achGrid.innerHTML = data.achievements.map(a => `
+        <div class="card p-3.5 md:p-4 flex items-center gap-3.5 border-l-4 border-l-[#1ed760]">
+          <div class="text-2xl">${a.icon}</div>
+          <div class="min-w-0"><p class="text-[11px] text-gray-400 font-semibold">${a.title}</p><p class="text-sm font-bold text-white truncate mt-0.5">${a.value}</p><p class="text-[11px] text-gray-500 truncate">${a.sub}</p></div>
         </div>
-      </div>
-    </div>
-  `).join('');
+      `).join('');
+    }
 
-  renderCharts(data.hours, data.weekdays);
+    const artList = document.getElementById('top-artists-list');
+    if(artList) {
+      artList.innerHTML = data.top_artists.map((a, i) => `
+        <div onclick="showArtistDetails('${a.artist.replace(/'/g, "\\'")}')" class="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 cursor-pointer transition">
+          <div class="flex items-center gap-2.5 min-w-0"><span class="w-6 text-xs font-bold ${i < 3 ? 'accent' : 'text-gray-500'}">#${i + 1}</span><img src="https://i.ytimg.com/vi/${a.sample_vid}/mqdefault.jpg" class="w-10 h-10 rounded-full object-cover border border-gray-700 flex-shrink-0"><div class="truncate"><p class="font-bold text-xs md:text-sm text-white truncate">${a.artist}</p><p class="text-[11px] text-gray-400">~${a.minutes} мин. • ${a.unique_songs} песен</p></div></div>
+          <span class="px-2 py-1 rounded-lg bg-white/5 text-xs font-bold accent ml-2 flex-shrink-0">${a.count} стр.</span>
+        </div>
+      `).join('');
+    }
 
-  const s1 = document.getElementById('battle-a1'), s2 = document.getElementById('battle-a2');
-  if (s1 && s2 && s1.options.length === 0) {
-    data.top_artists.slice(0, 30).forEach((a, idx) => {
-      s1.add(new Option(a.artist, a.artist, idx === 0, idx === 0));
-      s2.add(new Option(a.artist, a.artist, idx === 1, idx === 1));
-    });
+    const trkList = document.getElementById('top-tracks-list');
+    if(trkList) {
+      trkList.innerHTML = data.top_tracks.map((t, i) => `
+        <div class="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition">
+          <div class="flex items-center gap-2.5 min-w-0"><span class="w-6 text-xs font-bold ${i < 3 ? 'accent' : 'text-gray-500'}">#${i + 1}</span><img src="https://i.ytimg.com/vi/${t.video_id}/mqdefault.jpg" class="w-10 h-10 rounded-lg object-cover border border-gray-700 flex-shrink-0"><div class="truncate"><p class="font-bold text-xs md:text-sm text-white truncate">${t.title}</p><p class="text-[11px] text-gray-400 truncate">${t.artist}</p></div></div>
+          <div class="flex items-center gap-1.5 flex-shrink-0 ml-2"><span class="px-2 py-1 rounded-lg bg-white/5 text-xs font-bold">${t.count}x</span><a href="https://music.youtube.com/watch?v=${t.video_id}" target="_blank" class="w-7 h-7 rounded-full bg-white/10 hover:bg-[#1ed760] hover:text-black flex items-center justify-center text-xs transition">▶</a></div>
+        </div>
+      `).join('');
+    }
+
+    const erasGrid = document.getElementById('eras-grid');
+    if(erasGrid) {
+      erasGrid.innerHTML = data.eras.map(e => `
+        <div class="card overflow-hidden flex flex-col relative group">
+          <div class="h-32 w-full bg-gray-900 relative">
+            <img src="https://i.ytimg.com/vi/${e.sample_vid}/mqdefault.jpg" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition duration-300">
+            <div class="absolute inset-0 bg-gradient-to-t from-[#12161f] to-transparent"></div>
+            <span class="absolute top-3 left-3 px-2 py-1 rounded bg-black/60 text-[10px] font-bold text-white tracking-widest uppercase backdrop-blur-sm border border-white/10">${e.month}</span>
+          </div>
+          <div class="p-4 -mt-6 relative z-10">
+            <p class="text-sm font-extrabold text-white truncate drop-shadow-md">Эра ${e.top_artist}</p>
+            <p class="text-[11px] text-gray-300 truncate mt-1">Хит: ${e.top_track}</p>
+            <div class="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
+              <span class="text-[10px] text-gray-500 uppercase">Стримов за месяц</span>
+              <span class="text-xs font-bold accent">${e.total_streams}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    renderCharts(data.hours, data.weekdays);
+
+    const s1 = document.getElementById('battle-a1'), s2 = document.getElementById('battle-a2');
+    if (s1 && s2 && s1.options.length === 0) {
+      data.top_artists.slice(0, 30).forEach((a, idx) => {
+        s1.add(new Option(a.artist, a.artist, idx === 0, idx === 0));
+        s2.add(new Option(a.artist, a.artist, idx === 1, idx === 1));
+      });
+    }
+  } catch(e) {
+    console.error("Ошибка в loadStats: ", e);
   }
 }
 
@@ -424,13 +452,7 @@ function renderCharts(hoursData, weekdaysData) {
         labels: Array.from({length: 24}, (_, i) => String(i).padStart(2, '0') + ':00'),
         datasets: [{ data: hoursData, backgroundColor: '#1ed760', borderRadius: 4 }]
       },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9 } } },
-          y: { grid: { color: '#1e2533' }, ticks: { color: '#9ca3af' } }
-        }
-      }
+      options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9 } } }, y: { grid: { color: '#1e2533' }, ticks: { color: '#9ca3af' } } } }
     });
   }
 
@@ -445,13 +467,7 @@ function renderCharts(hoursData, weekdaysData) {
         labels: daysLabels,
         datasets: [{ data: weekdaysData, backgroundColor: '#10b981', borderRadius: 4 }]
       },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } },
-          y: { grid: { color: '#1e2533' }, ticks: { color: '#9ca3af' } }
-        }
-      }
+      options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } }, y: { grid: { color: '#1e2533' }, ticks: { color: '#9ca3af' } } } }
     });
   }
 }
@@ -493,8 +509,7 @@ function showArtistDetails(name) {
 }
 
 function runBattle() {
-  const s1 = document.getElementById('battle-a1');
-  const s2 = document.getElementById('battle-a2');
+  const s1 = document.getElementById('battle-a1'), s2 = document.getElementById('battle-a2');
   if (!s1 || !s2 || !s1.value || !s2.value) return;
   const r1 = getArtistObj(s1.value), r2 = getArtistObj(s2.value);
   if (!r1 || !r2) return;
@@ -555,7 +570,6 @@ function analyzePlaylist() {
   loader.classList.remove('hidden');
   loader.innerText = '⚙️ Подключаемся к плейлисту...';
 
-  // Публичные открытые Invidious API с поддержкой CORS
   const apiInstances = [
     `https://inv.nadeko.net/api/v1/playlists/${playlistId}`,
     `https://invidious.nerdvpn.de/api/v1/playlists/${playlistId}`,
@@ -568,34 +582,23 @@ function analyzePlaylist() {
 
     for (let url of apiInstances) {
       try {
-        // Запускаем цикл: тянем до 15 страниц (чтобы охватить твои 1500 треков)
         for (let page = 1; page <= 15; page++) {
           loader.innerText = `⚙️ Сканируем плейлист... (загружено ${allVideos.length} треков)`;
-          
           const resp = await fetch(`${url}?page=${page}`, { headers: { 'Accept': 'application/json' } });
-          if (!resp.ok) break; // Если сервер устал, прерываем цикл страниц
-          
+          if (!resp.ok) break; 
           const d = await resp.json();
           if (d && d.videos && d.videos.length > 0) {
             allVideos = allVideos.concat(d.videos);
             title = d.title || title;
-            // Если сервер вернул меньше 100 треков, значит это последняя страница плейлиста
             if (d.videos.length < 100) break;
-          } else {
-            break; // Пустая страница
-          }
+          } else break;
         }
-        
-        // Если мы успешно скачали треки с этого зеркала, выходим из перебора зеркал
         if (allVideos.length > 0) break;
-      } catch (err) {
-        allVideos = []; // Очищаем и пробуем следующее зеркало при ошибке
-      }
+      } catch (err) { allVideos = []; }
     }
 
     if (!allVideos || allVideos.length === 0) throw new Error("Не удалось получить список треков через API");
 
-    // Очищаем от дубликатов (иногда API отдает одни и те же треки на стыке страниц)
     const uniqueIds = new Set();
     const videos = allVideos.filter(v => {
       if (uniqueIds.has(v.videoId)) return false;
@@ -609,12 +612,10 @@ function analyzePlaylist() {
     videos.forEach(item => {
       const trackTitle = item.title;
       const trackArtist = item.author;
-      
       const myStreams = ALL_STREAMS.filter(s => s.artist === trackArtist && s.title === trackTitle).length;
       tCnt[trackTitle + "|||" + trackArtist] = myStreams;
       aCnt[trackArtist] = (aCnt[trackArtist] || 0) + 1;
       totalStr += myStreams;
-
       const myArtist = ALL_STREAMS.find(s => s.artist === trackArtist);
       if (myArtist && myArtist.tags) {
         const tgs = myArtist.tags.split(', ');
@@ -656,3 +657,8 @@ function analyzePlaylist() {
     box.innerHTML = '<span class="text-red-400 text-xs">Не удалось прочитать плейлист целиком. Убедись, что он открыт («По ссылке» или «Общедоступный»).</span>';
   });
 }
+
+loadStats(0);
+</script>
+</body>
+</html>
