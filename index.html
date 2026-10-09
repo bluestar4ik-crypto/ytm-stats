@@ -547,7 +547,21 @@ function runSearch() {
   `).join('');
 }
 
-function openRecapModal() { document.getElementById('recap-modal').classList.remove('hidden'); }
+function openRecapModal() {
+  if (!currentData) return;
+  const titles = {0: 'За всё время', 1: 'За сегодня', 7: 'За 7 дней', 30: 'За 4 недели', 90: 'За 3 месяца', 365: 'За год'};
+  document.getElementById('recap-title').innerText = titles[currentDaysFilter] || 'Рекап';
+  document.getElementById('recap-dates').innerText = `${currentData.first_date} — ${currentData.last_date}`;
+  document.getElementById('recap-streams').innerText = currentData.total_streams.toLocaleString('ru-RU');
+  document.getElementById('recap-minutes').innerText = currentData.total_minutes.toLocaleString('ru-RU');
+  document.getElementById('recap-streak').innerText = currentData.max_streak + ' дн.';
+  
+  document.getElementById('recap-top-artists').innerHTML = currentData.top_artists.slice(0, 5).map((a, i) => `<div class="flex justify-between"><span class="truncate pr-2">${i+1}. ${a.artist}</span><span class="text-[#1ed760] font-bold">${a.count}</span></div>`).join('');
+  document.getElementById('recap-top-tracks').innerHTML = currentData.top_tracks.slice(0, 5).map((t, i) => `<div class="flex justify-between"><span class="truncate pr-2">${i+1}. ${t.title}</span><span class="text-white font-bold">${t.count}</span></div>`).join('');
+  document.getElementById('recap-grid-covers').innerHTML = currentData.top_tracks.slice(0, 3).map(t => `<img src="https://i.ytimg.com/vi/${t.video_id}/mqdefault.jpg" class="w-full h-24 object-cover rounded-xl border border-white/10">`).join('');
+  
+  document.getElementById('recap-modal').classList.remove('hidden');
+}
 function downloadRecapImage() {
   html2canvas(document.getElementById('recap-capture'), { useCORS: true, backgroundColor: '#090c10', scale: 2 }).then(canvas => {
     const link = document.createElement('a'); link.download = `ytm_recap.png`; link.href = canvas.toDataURL('image/png'); link.click();
