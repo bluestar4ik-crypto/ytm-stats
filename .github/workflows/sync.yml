@@ -2,7 +2,7 @@ name: YTM Cloud Radar 24/7
 
 on:
   schedule:
-    - cron: '*/20 * * * *'
+    - cron: '0 */3 * * *'
   workflow_dispatch:
 
 permissions:
