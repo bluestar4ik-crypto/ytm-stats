@@ -202,9 +202,35 @@
 </div>
 
 <script>
+function getCleanTitle(title) {
+  const t = title.toUpperCase();
+  // Умное объединение для треков XLOV (склеиваем лайвы, клипы и фанкамы)
+  if (t.includes("RIZZ")) return "Rizz";
+  if (t.includes("BIII:-P") || t.includes("BIII P") || t.includes("BIIIP")) return "Biii:-P";
+  if (t.includes("1&ONLY") || t.includes("1 & ONLY") || t.includes("1 AND ONLY")) return "1&Only";
+  if (t.includes("HUSH")) return "Hush";
+  if (t.includes("SERVE")) return "SERVE";
+  if (t.includes("SCENT")) return "Scent";
+  if (t.includes("BACK 2 BACK")) return "BACK 2 BACK";
+  if (t.includes("EXTANCY")) return "Extancy";
+  if (t.includes("MASTERPIECE")) return "Masterpiece";
+  if (t.includes("TOOTH GEM") || t.includes("투스젬치와와")) return "Tooth Gem Chiwawa";
+  if (t.includes("DIRTY BABY")) return "Dirty Baby";
+  if (t.includes("KISS AND SAY GOODBYE")) return "Kiss and say goodbye";
+  if (t.includes("CAT MOVE")) return "Cat Move";
+  if (t.includes("ALL TIED UP")) return "All Tied Up";
+  if (t.includes("SILENCE")) return "Silence";
+  
+  // Для остальных артистов просто отрезаем ютубный мусор вроде [MV] и [4K]
+  let clean = title.replace(/\[.*?\]/g, '').split('|')[0].trim();
+  return clean || title;
+}
+
 const RAW = window.YTM_CLOUD_DATA || { updated_at: "-", now_playing: null, streams: [] };
 const ALL_STREAMS = RAW.streams.map(r => ({
-  video_id: r[0], title: r[1], artist: r[2],
+  video_id: r[0], 
+  title: getCleanTitle(r[1]), // Используем очищенное название
+  artist: r[2],
   source: r[3] === 1 ? 'MV (YouTube)' : (r[3] === 2 ? 'Live Radar' : 'YouTube Music'),
   ts: r[4], dur: r[5], tags: (r[6] ? String(r[6]).toLowerCase() : ''), dt: new Date(r[4] * 1000)
 }));
